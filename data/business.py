@@ -3,8 +3,8 @@ from .db_session import SqlAlchemyBase
 
 
 
-class User(SqlAlchemyBase):
-    __tablename__ = 'users'
+class Business(SqlAlchemyBase):
+    __tablename__ = 'businesses'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=True)
