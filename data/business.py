@@ -3,10 +3,10 @@ from sqlalchemy import Column, Integer, String, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from data.db_session import SqlAlchemyBase
 
 
-class Business(Base):
+class Business(SqlAlchemyBase):
     __tablename__ = 'businesses'
 
     id = Column(Integer, primary_key=True, autoincrement=True)

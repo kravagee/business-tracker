@@ -1,12 +1,12 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from data.db_session import SqlAlchemyBase
 
 
-class Product(Base):
+class Product(SqlAlchemyBase):
     __tablename__ = 'products'
 
     id = Column(Integer, primary_key=True, autoincrement=True)

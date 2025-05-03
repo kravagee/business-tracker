@@ -2,9 +2,10 @@ import datetime
 from sqlalchemy import Column, Integer, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from data.db_session import SqlAlchemyBase
 
-class StatsUsers(Base):
+
+class StatsUsers(SqlAlchemyBase):
     __tablename__ = 'stats_users'
 
     id = Column(Integer, primary_key=True, autoincrement=True)

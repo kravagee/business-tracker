@@ -2,9 +2,10 @@ import datetime
 from sqlalchemy import Column, Integer, Float, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from data.db_session import SqlAlchemyBase
 
-class StatsBusiness(Base):
+
+class StatsBusiness(SqlAlchemyBase):
     __tablename__ = 'stats_business'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
