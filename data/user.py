@@ -1,10 +1,7 @@
 import datetime
-from sqlalchemy import Column, Integer, String, JSON, DateTime
+from sqlalchemy import Column, Integer, String, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-
-from data.db_session import SqlAlchemyBase
-
+from db_session import SqlAlchemyBase
 
 class User(SqlAlchemyBase):
     __tablename__ = 'users'
@@ -13,17 +10,14 @@ class User(SqlAlchemyBase):
     username = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
     api_key = Column(String, nullable=True)
-    # Здесь храним как JSON списки ID бизнесов, которыми владеет или управляет пользователь
+
+    # Связи с бизнесами, где пользователь владелец
+    owned_businesses = relationship('Business', back_populates='owner', foreign_keys='Business.owner_id')
+    # Связи с бизнесами, где пользователь менеджер
+    managed_businesses = relationship('Business', back_populates='manager', foreign_keys='Business.manager_id')
+
+    # Эти поля-последствия, также можно оставить как JSON, или убрать их, если реализуешь связи
     business_owner_list = Column(JSON, nullable=True)
     business_manager_list = Column(JSON, nullable=True)
 
-    # Связи для бизнесов, где пользователь владелец
-    owned_businesses = relationship('Business',
-                                    primaryjoin="or_(User.id==Business.owner_id)",
-                                    back_populates='owner')
-
-    # Связи для бизнесов, где пользователь менеджер
-    managed_businesses = relationship('Business',
-                                      back_populates='manager')
-
-    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)

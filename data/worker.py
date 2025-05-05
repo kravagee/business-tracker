@@ -1,10 +1,7 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-
-from data.db_session import SqlAlchemyBase
-
+from db_session import SqlAlchemyBase
 
 class Worker(SqlAlchemyBase):
     __tablename__ = 'workers'
@@ -14,9 +11,8 @@ class Worker(SqlAlchemyBase):
     surname = Column(String, nullable=True)
     salary = Column(Float, nullable=True)
     position = Column(String, nullable=True)
-    # Внешний ключ к бизнесу
-    business_id = Column(Integer, ForeignKey('businesses.id'))
 
+    business_id = Column(Integer, ForeignKey('businesses.id'))
     business = relationship('Business', back_populates='workers')
 
-    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
