@@ -1,15 +1,16 @@
 import datetime
 from sqlalchemy import Column, Integer, Float, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
+from db_session import SqlAlchemyBase
 
-Base = declarative_base()
-
-class StatsBusiness(Base):
+class StatsBusiness(SqlAlchemyBase):
     __tablename__ = 'stats_business'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
+    business_id = Column(Integer, ForeignKey('businesses.id'))
     bought_products = Column(Integer, nullable=True)
     money_spent = Column(Float, nullable=True)
     worker_count = Column(Integer, nullable=True)
-    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+
+    business = relationship('Business')
+
+    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
