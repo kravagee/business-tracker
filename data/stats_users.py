@@ -1,6 +1,9 @@
 import datetime
-from sqlalchemy import Column, Integer, ForeignKey
-from db_session import SqlAlchemyBase
+from sqlalchemy import Column, Integer, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+
+from data.db_session import SqlAlchemyBase
+
 
 class StatsUsers(SqlAlchemyBase):
     __tablename__ = 'stats_users'
@@ -12,4 +15,4 @@ class StatsUsers(SqlAlchemyBase):
 
     user = relationship('User')
 
-    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)

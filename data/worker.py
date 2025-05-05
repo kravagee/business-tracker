@@ -1,7 +1,9 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from db_session import SqlAlchemyBase
+
+from data.db_session import SqlAlchemyBase
+
 
 class Worker(SqlAlchemyBase):
     __tablename__ = 'workers'
@@ -15,4 +17,4 @@ class Worker(SqlAlchemyBase):
     business_id = Column(Integer, ForeignKey('businesses.id'))
     business = relationship('Business', back_populates='workers')
 
-    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
