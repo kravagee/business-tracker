@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Домашняя страница</title></head>
+<body>
+<h1>Добро пожаловать, {{ user.username }}</h1>
+<ul>
+    <li><a href="{{ url_for('create_business') }}">Создать бизнес</a></li>
+    <li><a href="{{ url_for('business_list') }}">Мои бизнесы</a></li>
+    <li><a href="{{ url_for('top') }}">Топ пользователей и бизнесов</a></li>
+    <li><a href="{{ url_for('logout') }}">Выйти</a></li>
+</ul>
+</body>
+</html>

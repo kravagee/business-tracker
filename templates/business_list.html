@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Топ</title></head>
+<body>
+<h2>Топ Пользователей</h2>
+<ol>
+{% for user in top_users %}
+    <li>{{ user.username }} — рейтинг: {{ user.rating }}</li>
+{% endfor %}
+</ol>
+
+<h2>Топ Бизнесов</h2>
+<ol>
+{% for biz in top_businesses %}
+    <li>{{ biz.name }} — рейтинг: {{ biz.rating }}</li>
+{% endfor %}
+</ol>
+<a href="{{ url_for('home') }}">На главную</a>
+</body>
+</html>
