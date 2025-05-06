@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
 from db_session import SqlAlchemyBase
 
@@ -25,4 +25,4 @@ class Business(SqlAlchemyBase):
     worker_list = Column(JSON, nullable=True)
     product_list = Column(JSON, nullable=True)
 
-    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)

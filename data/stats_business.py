@@ -1,5 +1,6 @@
 import datetime
 from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from db_session import SqlAlchemyBase
 
 class StatsBusiness(SqlAlchemyBase):
