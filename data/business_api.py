@@ -1,11 +1,11 @@
 import flask
 from flask import request, make_response, jsonify
 
-from data import db_session
-from data.business import Business
-from data.product import Product
-from data.user import User
-from data.worker import Worker
+import db_session
+from business import Business
+from product import Product
+from user import User
+from worker import Worker
 
 blueprint = flask.Blueprint(
     'business_api',
