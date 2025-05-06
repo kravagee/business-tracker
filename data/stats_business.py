@@ -1,7 +1,9 @@
 import datetime
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Integer, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from db_session import SqlAlchemyBase
+
+from data.db_session import SqlAlchemyBase
+
 
 class StatsBusiness(SqlAlchemyBase):
     __tablename__ = 'stats_business'
@@ -14,4 +16,4 @@ class StatsBusiness(SqlAlchemyBase):
 
     business = relationship('Business')
 
-    modified_date = Column(datetime.datetime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    modified_date = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
