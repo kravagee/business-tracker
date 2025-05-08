@@ -1,7 +1,7 @@
 import datetime
 from sqlalchemy import Column, Integer, String, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
-from db_session import SqlAlchemyBase
+from .db_session import SqlAlchemyBase
 
 class Business(SqlAlchemyBase):
     __tablename__ = 'businesses'

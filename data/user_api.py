@@ -2,11 +2,11 @@ import flask
 from flask import request, make_response, jsonify
 
 from . import db_session
-from business import Business
-from business_api import api_key_check
-from stats_business import StatsBusiness
-from stats_users import StatsUsers
-from user import User
+from .business import Business
+from .business_api import api_key_check
+from .stats_business import StatsBusiness
+from .stats_users import StatsUsers
+from .user import User
 
 blueprint = flask.Blueprint(
     'users_api',
