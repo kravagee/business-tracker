@@ -1,8 +1,9 @@
-from flask import Flask, redirect, render_template, request, url_for, flash
+from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 import random
 import string
 
+# Импорт из папки data
 from data import db_session, user_api, business_api
 from data.user import User
 from data.business import Business
@@ -12,56 +13,75 @@ from data.stats_business import StatsBusiness
 from data.stats_users import StatsUsers
 
 app = Flask(__name__)
-login_manager = LoginManager()
-login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
+login_manager = LoginManager()
+login_manager.init_app(app)
 
-# Загрузка юзера по ID
+# Функция для генерации API ключа
+def generate_api_key(length=32):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+# Загрузка пользователя по ID
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
     return db_sess.query(User).get(int(user_id))
 
-
-# 1) Домашняя страница
-@app.route('/', methods=['GET'])
+# Главная (стартовая)
+@app.route('/')
 def index():
-    # Стартовая страница с предложением регистрации или входа
     return render_template('index.html', user=current_user)
 
-
-# 2) Регистрация
+# Регистрация
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        email = request.form['email']
-        db_sess = db_session.create_session()
+        role = request.form['role']
 
+        db_sess = db_session.create_session()
         if db_sess.query(User).filter(User.username == username).first():
             flash('Пользователь с таким именем уже существует')
             return redirect('/register')
-        if db_sess.query(User).filter(User.email == email).first():
-            flash('Пользователь с таким email уже существует')
-            return redirect('/register')
 
-        api_key = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+        # Создание API ключа
+        api_key = generate_api_key()
+
+        # Создаем пользователя
         user = User(
             username=username,
-            email=email,
-            api_key=api_key
+            api_key=api_key,
+            role=role  # добавьте в модель User поле role
         )
         user.set_password(password)
         db_sess.add(user)
         db_sess.commit()
+
+        # Дополнительные поля в зависимости от роли
+        if role == 'owner':
+            business_name = request.form.get('business_name')
+            business_description = request.form.get('business_description')
+            # Создайте бизнес или сохраните эти данные по необходимости
+            # Например, создадим бизнес сразу:
+            if business_name:
+                business = Business(
+                    name=business_name,
+                    description=business_description,
+                    owner_id=user.id
+                )
+                db_sess.add(business)
+        elif role == 'manager':
+            manager_info = request.form.get('manager_info')
+            # Можно сюда добавить сохранение данных менеджера
+
+        db_sess.commit()
         login_user(user)
         return redirect('/home')
-    return render_template('register.html')
 
+    return render_template('register.html')  # Страница с динамическими вопросами
 
-# 3) Вход (логин)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -76,23 +96,30 @@ def login():
             flash('Неверное имя пользователя или пароль')
     return render_template('login.html')
 
+# Выход
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect('/')
 
-# 4) Главная страница
-@app.route('/home', methods=['GET'])
+# Главная страница после авторизации
+@app.route('/home')
 @login_required
 def home():
     return render_template('home.html', user=current_user)
 
-
-# 5) Создать бизнес
+# Создание бизнеса (для владельца)
 @app.route('/create_business', methods=['GET', 'POST'])
 @login_required
 def create_business():
+    if current_user.role != 'owner':
+        flash('Доступ запрещен')
+        return redirect('/home')
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
         db_sess = db_session.create_session()
-        # Создаем бизнес
         business = Business(
             name=name,
             description=description,
@@ -102,52 +129,41 @@ def create_business():
         db_sess.commit()
         flash('Бизнес успешно создан')
         return redirect('/business_list')
-    return render_template('create_business.html', user=current_user)
+    return render_template('create_business.html')
 
-
-# 6) Просмотр списка бизнесов
-@app.route('/business_list', methods=['GET'])
+# Просмотр своих бизнесов
+@app.route('/business_list')
 @login_required
 def business_list():
     db_sess = db_session.create_session()
-    # Получаем бизнесы текущего пользователя
-    businesses = db_sess.query(Business).filter(Business.owner_id == current_user.id).all()
+    if current_user.role == 'owner':
+        # Владелец видит свои бизнесы
+        businesses = db_sess.query(Business).filter(Business.owner_id == current_user.id).all()
+    elif current_user.role == 'manager':
+        # Менеджер может видеть бизнесы, где он менеджер
+        businesses = current_user.business_manager_list
+    else:
+        # Другие роли
+        businesses = []
     return render_template('business_list.html', user=current_user, businesses=businesses)
 
-
-# 7) Смотреть топ пользователей и бизнесов
-@app.route('/top', methods=['GET'])
-@login_required
-def top():
-    db_sess = db_session.create_session()
-    top_users = db_sess.query(User).order_by(User.rating.desc()).limit(10).all()
-    top_biz = db_sess.query(Business).order_by(Business.rating.desc()).limit(10).all()
-    return render_template('top.html', user=current_user, top_users=top_users, top_biz=top_biz)
-
-
-# 8) Посмотреть бизнес по id
-@app.route('/business/<int:id>', methods=['GET'])
+# Просмотр конкретного бизнеса
+@app.route('/business/<int:id>')
 @login_required
 def business(id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).get(id)
     if not biz:
         return 'Бизнес не найден', 404
-    # Получение связанных списков
-    workers = biz.worker_list  # необходимо, чтобы в модели были связи
+    # Проверка доступа
+    if (current_user.role == 'owner' and biz.owner_id != current_user.id) and \
+       (current_user.role == 'manager' and current_user not in biz.managers):
+        return 'Доступ запрещен', 403
+    workers = biz.worker_list
     products = biz.product_list
     managers = biz.manager_list
     return render_template('business.html', user=current_user, business=biz, workers=workers, products=products, managers=managers)
 
-
-# Выход
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect('/')
-
-# Запуск сервера
 if __name__ == '__main__':
     db_session.global_init('db/tracker.db')
     app.register_blueprint(user_api.blueprint)

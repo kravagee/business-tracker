@@ -3,12 +3,42 @@
 <head><title>Регистрация</title></head>
 <body>
 <h2>Регистрация</h2>
-<form method="post">
-    Имя пользователя: <input type="text" name="username"><br>
-    Почта: <input type="email" name="email"><br>
-    Пароль: <input type="password" name="password"><br>
-    <input type="submit" value="Зарегистрироваться">
+<form method="post" id="register-form">
+    <input type="text" name="username" placeholder="Имя пользователя" required>
+    <input type="password" name="password" placeholder="Пароль" required>
+
+    <!-- Выбор роли -->
+    <label for="role">Выберите роль:</label>
+    <select name="role" id="role" onchange="toggleQuestions()" required>
+        <option value="owner">Владелец бизнеса</option>
+        <option value="manager">Менеджер</option>
+    </select>
+
+    <!-- Вопросы для владельца -->
+    <div id="owner-questions" style="display:none;">
+        <label>Название бизнеса:</label>
+        <input type="text" name="business_name" placeholder="Название бизнеса">
+        <label>Описание бизнеса:</label>
+        <input type="text" name="business_description" placeholder="Описание бизнеса">
+    </div>
+
+    <!-- Вопросы для менеджера -->
+    <div id="manager-questions" style="display:none;">
+        <label>Пояснение к роли:</label>
+        <input type="text" name="manager_info" placeholder="Объяснение роли">
+    </div>
+
+    <button type="submit">Зарегистрироваться</button>
 </form>
+
+<script>
+function toggleQuestions() {
+    var role = document.getElementById('role').value;
+    document.getElementById('owner-questions').style.display = (role === 'owner') ? 'block' : 'none';
+    document.getElementById('manager-questions').style.display = (role === 'manager') ? 'block' : 'none';
+}
+window.onload = toggleQuestions;
+</script>
 <a href="{{ url_for('login') }}">Войти</a>
 </body>
 </html>
