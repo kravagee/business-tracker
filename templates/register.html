@@ -1,74 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <h2 class="text-center mb-4">Регистрация</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="username">Имя пользователя</label>
-                <input type="text" class="form-control" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Пароль</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="user-type-selector">Тип пользователя</label>
-                <select class="form-control" id="user-type-selector" name="user_type" required>
-                    <option value="">Выберите тип</option>
-                    <option value="owner">Владелец бизнеса</option>
-                    <option value="worker">Работник</option>
-                </select>
-            </div>
-            
-            <!-- Форма для владельца -->
-            <div id="owner-form" class="role-form" style="display: none;">
-                <div class="form-group">
-                    <label for="business_name">Название бизнеса</label>
-                    <input type="text" class="form-control" id="business_name" name="business_name">
-                </div>
-                <div class="form-group">
-                    <label for="business_description">Описание бизнеса</label>
-                    <textarea class="form-control" id="business_description" name="business_description" rows="3"></textarea>
-                </div>
-            </div>
-            
-            <!-- Форма для работника -->
-            <div id="worker-form" class="role-form" style="display: none;">
-                <div class="form-group">
-                    <label for="name">Имя</label>
-                    <input type="text" class="form-control" id="name" name="name">
-                </div>
-                <div class="form-group">
-                    <label for="surname">Фамилия</label>
-                    <input type="text" class="form-control" id="surname" name="surname">
-                </div>
-                <div class="form-group">
-                    <label for="position">Должность</label>
-                    <input type="text" class="form-control" id="position" name="position">
-                </div>
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button>
-        </form>
-        
-        <div class="mt-3 text-center">
-            Уже есть аккаунт? <a href="/login">Войти</a>
-        </div>
+<form method="POST">
+    <div>
+        <label>Имя пользователя:</label>
+        <input type="text" name="username" required>
     </div>
-</div>
-
-<script>
-    document.getElementById('user-type-selector').addEventListener('change', function() {
-        const userType = this.value;
-        document.querySelectorAll('.role-form').forEach(form => {
-            form.style.display = 'none';
-        });
-        if (userType) {
-            document.getElementById(userType + '-form').style.display = 'block';
-        }
-    });
-</script>
+    <div>
+        <label>Пароль:</label>
+        <input type="password" name="password" required>
+    </div>
+    <button type="submit">Зарегистрироваться</button>
+</form>
 {% endblock %}

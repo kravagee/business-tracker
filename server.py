@@ -1,3 +1,5 @@
+from os import write
+
 from flask import Flask, redirect, render_template, request, flash
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
 import random
@@ -37,66 +39,47 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        user_type = request.form['user_type']  # 'owner' или 'worker'
+        # Получаем данные из формы
         username = request.form['username']
         password = request.form['password']
+        business_name = request.form.get('business_name', 'Новый бизнес')
 
         db_sess = db_session.create_session()
-        if db_sess.query(User).filter(User.username == username).first():
-            flash('Пользователь с таким именем уже существует')
-            return redirect('/register')
 
-        # Создаём базового пользователя
-        user = User(
-            username=username,
-            api_key=generate_api_key()
-        )
+        # Создаём пользователя
+        user = User()
+        user.username = username
+        user.hashed_password = password
+        user.api_key = generate_api_key()
+        user.name = ""
+        user.surname = ""
+        user.email = ""
+        user.position = "Владелец"
         user.set_password(password)
+
         db_sess.add(user)
-        db_sess.flush()  # Получаем ID пользователя
+        db_sess.flush()  # Чтобы получить ID пользователя
 
-        # Для владельцев
-        if user_type == 'owner':
-            business_name = request.form.get('business_name')
-            business_description = request.form.get('business_description')
+        # Создаём бизнес
+        business = Business()
+        business.name = business_name
+        business.description = ""
+        business.owner_id = user.id
+        db_sess.add(business)
 
-            if business_name:
-                business = Business(
-                    name=business_name,
-                    description=business_description,
-                    owner_id=user.id
-                )
-                db_sess.add(business)
-
-                biz_stats = StatsBusiness(
-                    business_id=business.id,
-                    bought_products=0,
-                    money_spent=0,
-                    worker_count=0
-                )
-                db_sess.add(biz_stats)
-
-        # Для работников
-        elif user_type == 'worker':
-            name = request.form.get('name')
-            surname = request.form.get('surname')
-            position = request.form.get('position')
-
-            if name and surname:
-                worker = Worker(
-                    name=name,
-                    surname=surname,
-                    position=position,
-                    user_id=user.id
-                )
-                db_sess.add(worker)
+        # Статистика бизнеса
+        biz_stats = StatsBusiness()
+        biz_stats.business_id = business.id
+        biz_stats.bought_products = 0
+        biz_stats.money_spent = 0
+        biz_stats.worker_count = 0
+        db_sess.add(biz_stats)
 
         # Статистика пользователя
-        stats = StatsUsers(
-            user_id=user.id,
-            business_count=1 if user_type == 'owner' else 0,
-            business_managering_count=0
-        )
+        stats = StatsUsers()
+        stats.user_id = user.id
+        stats.business_count = 1
+        stats.business_managering_count = 0
         db_sess.add(stats)
 
         db_sess.commit()
