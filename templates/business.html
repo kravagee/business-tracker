@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{{ business.name }}</h2>
+            <p>{{ business.description }}</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Статистика</h5>
+                </div>
+                <div class="card-body">
+                    {% if stats %}
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Работников: {{ stats.worker_count }}</li>
+                        <li class="list-group-item">Товаров: {{ stats.bought_products }}</li>
+                        <li class="list-group-item">Потрачено: {{ stats.money_spent }} руб.</li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Работники</h5>
+                </div>
+                <div class="card-body">
+                    {% if workers %}
+                    <ul class="list-group">
+                        {% for worker in workers %}
+                        <li class="list-group-item">
+                            {{ worker.name }} {{ worker.surname }} - {{ worker.position }}
+                            <span class="badge badge-primary float-right">{{ worker.salary }} руб.</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">Нет работников</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Товары</h5>
+                </div>
+                <div class="card-body">
+                    {% if products %}
+                    <ul class="list-group">
+                        {% for product in products %}
+                        <li class="list-group-item">
+                            {{ product.name }}
+                            <span class="badge badge-secondary float-right">{{ product.price }} руб.</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">Нет товаров</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <a href="/business_list" class="btn btn-secondary">Назад к списку</a>
+</div>
+{% endblock %}
