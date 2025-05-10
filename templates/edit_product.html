@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% if access %}
+        <h1>Редактирование продукта</h1>
+
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="purchase_id" value="{{ purchase.id }}">
+
+            <div class="form-group">
+                <label for="name">Название продукта:</label>
+                <input type="text" id="name" name="name" value="{{ purchase.name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Цена:</label>
+                <input type="number" step="0.01" id="price" name="price" value="{{ purchase.price }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="status">Статус:</label>
+                <select id="status" name="status">
+                    {% if purchase.status == 'active' %}
+                    <option value="active">Активный</option>
+                    {% endif %}
+                    {% if purchase.status == 'inactive' %}
+                    <option value="inactive">Неактивный</option>
+                    {% endif %}
+                    {% if purchase.status == 'pending' %}
+                    <option value="pending">Ожидание</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="image">Изображение:</label>
+                <input type="file" id="image" name="image" accept="image/*">
+                {% if purchase.image %}
+                    <div>
+                        <p>Текущее изображение:</p>
+                        <img src="{{ purchase.image }}" alt="Current image" style="max-width: 200px;">
+                        <label>
+                            <input type="checkbox" name="delete_image"> Удалить изображение
+                        </label>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Сохранить изменения</button>
+                <a href="{{ url_for('business_products', id=bizz_id)}}" class="btn-cancel">Отмена</a>
+            </div>
+        </form>
+    {% else %}
+        <div>Что-то пошло не так</div>
+    {% endif %}
+</div>
+{% endblock %}
+

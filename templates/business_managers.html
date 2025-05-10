@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% if access %}
+        <h1>Менеджеры бизнеса</h1>
+        
+        <div class="managers-header">
+            <h2>Всего менеджеров: {{ managers|length }}</h2>
+            <a href="{{ url_for('business_add_manager', biz_id=bizz_id) }}" class="btn btn-primary">
+                + Добавить менеджера
+            </a>
+        </div>
+
+        <div class="managers-list">
+            {% if managers %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Имя пользователя</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for manager in managers %}
+                        <tr>
+                            <td>{{ manager.username }}</td>
+                            <td>
+                                <a href="{{ url_for('remove_manage', biz_id=bizz_id, manager_id=manager.id) }}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Вы уверены, что хотите удалить этого менеджера?')">
+                                    Удалить
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info">Нет назначенных менеджеров</div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="alert alert-danger">
+            Что-то пошло не так
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

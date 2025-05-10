@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<body>
+    <div class="container">
+        {% if access %}
+            <h1>Статистика бизнеса</h1>
+                <div class="stats-card">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Куплено товаров</div>
+                            <div class="stat-value">{{ stats.bought_products }}</div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-label">Потрачено денег</div>
+                            <div class="stat-value">{{ stats.money_spent }}</div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="stat-label">Количество работников</div>
+                            <div class="stat-value">{{ stats.worker_count }}</div>
+                        </div>
+                    </div>
+                </div>
+        {% else %}
+            <div class="stat-label"> Что-то пошло не так </div>
+        {% endif %}
+    </div>
+</body>
+{% endblock %}

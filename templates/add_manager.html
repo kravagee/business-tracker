@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% if access %}
+        <h1>Добавить менеджера в бизнес</h1>
+
+        <form method="POST" action="">
+            <div class="form-group">
+                <label for="manag_username">Имя пользователя менеджера*:</label>
+                <input type="text" id="manag_username" name="manag_username" required
+                       placeholder="Введите логин менеджера">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Добавить</button>
+            </div>
+        </form>
+    {% else %}
+    <div>Что-то пошло не так</div>
+    {% endif %}
+</div>
+{% endblock %}
