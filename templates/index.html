@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Добро пожаловать в Business Tracker!</h1>
+    <p class="lead">Система управления бизнесами и работниками</p>
+    <hr class="my-4">
+    {% if current_user.is_authenticated %}
+        <a class="btn btn-primary btn-lg" href="/home" role="button">Перейти в личный кабинет</a>
+    {% else %}
+        <p>Для работы с системой необходимо авторизоваться</p>
+    {% endif %}
+</div>
+{% endblock %}

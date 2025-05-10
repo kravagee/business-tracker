@@ -1,12 +1,12 @@
 import flask
 from flask import request, make_response, jsonify
 
-from data import db_session
-from data.business import Business
-from data.business_api import api_key_check
-from data.stats_business import StatsBusiness
-from data.stats_users import StatsUsers
-from data.user import User
+from . import db_session
+from .business import Business
+from .business_api import api_key_check
+from .stats_business import StatsBusiness
+from .stats_users import StatsUsers
+from .user import User
 
 blueprint = flask.Blueprint(
     'users_api',
