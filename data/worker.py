@@ -1,11 +1,12 @@
 import datetime
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy_serializer import SerializerMixin
 
 from data.db_session import SqlAlchemyBase
 
 
-class Worker(SqlAlchemyBase):
+class Worker(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'workers'
 
     id = Column(Integer, primary_key=True, autoincrement=True)

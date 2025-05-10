@@ -1,5 +1,4 @@
-from os import access
-from pathlib import Path
+import json
 
 from flask import Flask, redirect, render_template, request, url_for, flash, make_response, jsonify
 from flask_login import LoginManager, login_required, login_user, logout_user, current_user
@@ -20,56 +19,55 @@ login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 
-def count_files(directory):
-    path = Path(directory)
-    return sum(1 for item in path.iterdir() if item.is_file())
+def generate_api_key(length=32):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
 # Загрузка юзера по ID
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
-    return db_sess.query(User).get(int(user_id))
+    return db_sess.query(User).filter(User.id == user_id).first()
 
 
-# 1) Домашняя страница
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
-    # Стартовая страница с предложением регистрации или входа
-    return render_template('index.html', user=current_user)
+    if not current_user:
+        return render_template('index.html')
+    return render_template('index.html', current_user=current_user)
 
 
-# 2) Регистрация
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # Получаем данные из формы
         username = request.form['username']
         password = request.form['password']
-        email = request.form['email']
         db_sess = db_session.create_session()
 
+        # Создаём пользователя
+        user = User()
         if db_sess.query(User).filter(User.username == username).first():
-            flash('Пользователь с таким именем уже существует')
-            return redirect('/register')
-        if db_sess.query(User).filter(User.email == email).first():
-            flash('Пользователь с таким email уже существует')
-            return redirect('/register')
-
-        api_key = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-        user = User(
-            username=username,
-            email=email,
-            api_key=api_key
-        )
+            return render_template('register.html')
+        user.username = username
         user.set_password(password)
+
         db_sess.add(user)
+        db_sess.commit()
+
+        stats = StatsUsers()
+        stats.user_id = user.id
+        stats.business_count = 0
+        stats.business_managering_count = 0
+        db_sess.add(stats)
+
         db_sess.commit()
         login_user(user)
         return redirect('/home')
+
     return render_template('register.html')
 
 
-# 3) Вход (логин)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -85,14 +83,14 @@ def login():
     return render_template('login.html')
 
 
-# 4) Главная страница
-@app.route('/home', methods=['GET'])
+@app.route('/home')
 @login_required
 def home():
-    return render_template('home.html', user=current_user)
+    db_sess = db_session.create_session()
+    stats = db_sess.query(StatsUsers).filter(StatsUsers.user_id == current_user.id).first()
+    return render_template('home_owner.html', user=current_user, stats=stats)
 
 
-# 5) Создать бизнес
 @app.route('/create_business', methods=['GET', 'POST'])
 @login_required
 def create_business():
@@ -100,7 +98,7 @@ def create_business():
         name = request.form['name']
         description = request.form['description']
         db_sess = db_session.create_session()
-        # Создаем бизнес
+
         business = Business(
             name=name,
             description=description,
@@ -108,53 +106,112 @@ def create_business():
         )
         db_sess.add(business)
         db_sess.commit()
+
+        us = db_sess.query(User).filter(User.id == current_user.id).first()
+
+        if us.business_owner_list:
+            list_biz = json.loads(us.business_owner_list)
+            list_biz['id'].append(business.id)
+            us.business_owner_list = json.dumps(list_biz)
+            db_sess.commit()
+        else:
+            list_biz = dict()
+            list_biz['id'] = [business.id]
+            us.business_owner_list = json.dumps(list_biz)
+            db_sess.commit()
+
+
+        # Создаем статистику для бизнеса
+        biz_stats = StatsBusiness(
+            business_id=business.id,
+            bought_products=0,
+            money_spent=0,
+            worker_count=0
+        )
+        db_sess.add(biz_stats)
+
+        # Обновляем статистику пользователя
+        user_stats = db_sess.query(StatsUsers).filter(StatsUsers.user_id == current_user.id).first()
+        if user_stats:
+            user_stats.business_count += 1
+
+        db_sess.commit()
         flash('Бизнес успешно создан')
         return redirect('/business_list')
-    return render_template('create_business.html', user=current_user)
+
+    return render_template('create_business.html')
 
 
-# 6) Просмотр списка бизнесов
-@app.route('/business_list', methods=['GET'])
+# Просмотр своих бизнесов
+@app.route('/business_list')
 @login_required
 def business_list():
     db_sess = db_session.create_session()
-    # Получаем бизнесы текущего пользователя
-    businesses = db_sess.query(Business).filter(Business.owner_id == current_user.id).all()
-    return render_template('business_list.html', user=current_user, businesses=businesses)
+    bizes = []
+    if current_user.business_manager_list and current_user.business_owner_list:
+        bizes = json.loads(current_user.business_owner_list)['id'] + json.loads(current_user.business_manager_list)['id']
+    elif current_user.business_manager_list:
+        bizes = json.loads(current_user.business_manager_list)['id']
+    elif current_user.business_owner_list:
+        bizes = json.loads(current_user.business_owner_list)['id']
+    businesses_with_stats = []
+    for biz in bizes:
+        stats = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz).first()
+        businesses_with_stats.append((db_sess.query(Business).filter(Business.id == biz).first(), stats))
+    return render_template('business_list.html',
+                           user=current_user,
+                           businesses=businesses_with_stats)
 
 
-# 7) Смотреть топ пользователей и бизнесов
-@app.route('/top', methods=['GET'])
-@login_required
-def top():
-    db_sess = db_session.create_session()
-    top_users = db_sess.query(User).order_by(User.rating.desc()).limit(10).all()
-    top_biz = db_sess.query(Business).order_by(Business.rating.desc()).limit(10).all()
-    return render_template('top.html', user=current_user, top_users=top_users, top_biz=top_biz)
-
-
-# 8) Посмотреть бизнес по id
-@app.route('/business/<int>', methods=['GET'])
+# Просмотр конкретного бизнеса
+@app.route('/business/<int:id>')
 @login_required
 def business(id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).get(id)
     if not biz:
-        return 'Бизнес не найден', 404
-    # Получение связанных списков
-    workers = biz.worker_list  # необходимо, чтобы в модели были связи
-    products = biz.product_list
+        flash('Бизнес не найден')
+        return redirect('/business_list')
+    workers = db_sess.query(Worker).filter(Worker.business_id == id).all()
+    products = db_sess.query(Product).filter(Product.business_id == id).all()
     managers = biz.manager_list
-    return render_template('business.html', user=current_user, business=biz, workers=workers, products=products,
-                           managers=managers)
+    stats = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
+
+    return render_template('business.html',
+                           user=current_user,
+                           business=biz,
+                           workers=workers,
+                           products=products,
+                           managers=managers,
+                           stats=stats)
+
+
+# Топ пользователей/бизнесов
+@app.route('/top')
+@login_required
+def top():
+    db_sess = db_session.create_session()
+
+    # Топ пользователей по количеству бизнесов
+    top_users = db_sess.query(User, StatsUsers).join(StatsUsers).order_by(StatsUsers.business_count.desc()).limit(
+        10).all()
+
+    # Топ бизнесов по количеству работников
+    top_businesses = db_sess.query(Business, StatsBusiness).join(StatsBusiness).order_by(
+        StatsBusiness.worker_count.desc()).limit(10).all()
+
+    return render_template('top.html',
+                           user=current_user,
+                           top_users=top_users,
+                           top_businesses=top_businesses)
 
 
 @app.route('/business/<id>/stats', methods=['GET'])
 @login_required
 def business_stats(id):
     db_sess = db_session.create_session()
-    st_biz = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).one()
-    biz = db_sess.query(Business).filter(Business.id == id).one()
+    st_biz = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
+    biz = db_sess.query(Business).filter(Business.id == id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('business_stats.html', user=current_user, stats=st_biz, access=False)
     return render_template('business_stats.html', user=current_user, stats=st_biz, access=True)
@@ -164,7 +221,7 @@ def business_stats(id):
 @login_required
 def business_products(id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == id).one()
+    biz = db_sess.query(Business).filter(Business.id == id).first()
     prods = db_sess.query(Product).filter(Product.id in Business.product_list['id']).all()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('business_products.html', user=current_user, purchases=prods, access=False)
@@ -175,8 +232,8 @@ def business_products(id):
 @login_required
 def edit_product(biz_id, id):
     db_sess = db_session.create_session()
-    product = db_sess.query(Product).filter(Product.id == id).one()
-    biz = db_sess.query(Business).filter(Business.id == biz_id).one()
+    product = db_sess.query(Product).filter(Product.id == id).first()
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('edit_product.html', user=current_user, bizz_id=biz_id, access=False)
     if request.method == 'GET':
@@ -197,7 +254,7 @@ def edit_product(biz_id, id):
 @login_required
 def business_workers(id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == id).one()
+    biz = db_sess.query(Business).filter(Business.id == id).first()
     workers = db_sess.query(Worker).filter(Worker.id in Business.worker_list['id']).all()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('business_workers.html', user=current_user, employees=workers, bizz_id=id, access=False)
@@ -208,7 +265,7 @@ def business_workers(id):
 @login_required
 def business_add_worker(id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == id).one()
+    biz = db_sess.query(Business).filter(Business.id == id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('add_worker.html', user=current_user, biz=biz, access=False)
     if request.method == 'GET':
@@ -229,8 +286,8 @@ def business_add_worker(id):
 @login_required
 def business_edit_worker(biz_id, id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == biz_id).one()
-    work = db_sess.query(Worker).filter(Worker.id == id).one()
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
+    work = db_sess.query(Worker).filter(Worker.id == id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('edit_worker.html', user=current_user, work=work, biz=biz, access=False)
     if request.method == 'GET':
@@ -247,8 +304,8 @@ def business_edit_worker(biz_id, id):
 @login_required
 def business_delete_worker(biz_id, id):
     db_sess = db_session.create_session()
-    work = db_sess.query(Worker).filter(Worker.id == id).one()
-    biz = db_sess.query(Business).filter(Business.id == id).one()
+    work = db_sess.query(Worker).filter(Worker.id == id).first()
+    biz = db_sess.query(Business).filter(Business.id == id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return make_response(jsonify({'error': 'Access Denied'}), 403)
     db_sess.delete(work)
@@ -261,7 +318,7 @@ def business_delete_worker(biz_id, id):
 @login_required
 def business_add_product(biz_id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == biz_id).one()
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('add_product.html', user=current_user, bizz_id=biz_id, access=False)
     if request.method == 'GET':
@@ -284,7 +341,7 @@ def business_add_product(biz_id):
 @login_required
 def business_manager_list(biz_id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == biz_id).one()
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     managers = db_sess.query(User).filter(User.id in Business.manager_list['id']).all()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('business_managers.html', user=current_user, managers=managers, bizz_id=biz_id,
@@ -296,12 +353,12 @@ def business_manager_list(biz_id):
 @login_required
 def business_add_manger(biz_id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == biz_id).one()
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return render_template('add_manager.html', user=current_user, access=False)
     if request.method == 'GET':
         return render_template('add_manager.html', user=current_user, access=True)
-    manag = db_sess.query(User).filter(User.username == request.form['manag_username']).one()
+    manag = db_sess.query(User).filter(User.username == request.form['manag_username']).first()
     biz.manager_list['id'].append(manag.id)
     return render_template('add_manager.html', user=current_user, access=True)
 
@@ -309,7 +366,7 @@ def business_add_manger(biz_id):
 @app.route('/business/<biz_id>/remove_manager/<id>', methods=['POST'])
 def business_remove_manager(biz_id, id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).filter(Business.id == biz_id).one()
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
         return make_response(jsonify({'error': 'Access denied'}), 403)
     biz.manager_list['id'].remove(id)

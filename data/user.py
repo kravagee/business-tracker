@@ -1,12 +1,15 @@
 import datetime
+
+from flask_login import UserMixin
+from sqlalchemy_serializer import SerializerMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import Column, Integer, String, JSON, DateTime
+from sqlalchemy import Column, Integer, String, JSON, DateTime, TEXT
 from sqlalchemy.orm import relationship
 
 from data.db_session import SqlAlchemyBase
 
 
-class User(SqlAlchemyBase):
+class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -16,11 +19,10 @@ class User(SqlAlchemyBase):
 
     # Связи с бизнесами
     owned_businesses = relationship('Business', back_populates='owner', foreign_keys='Business.owner_id')
-    managed_businesses = relationship('Business', back_populates='managers', secondary='business_managers')
 
     # Поля для хранения списков (можно использовать вместо связей или вместе с ними)
-    business_owner_list = Column(JSON, nullable=True)
-    business_manager_list = Column(JSON, nullable=True)
+    business_owner_list = Column(TEXT, nullable=True)
+    business_manager_list = Column(TEXT, nullable=True)
 
     # Связь с работником (если пользователь является работником)
 

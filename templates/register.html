@@ -1,15 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form method="POST">
-    <div>
-        <label>Имя пользователя:</label>
-        <input type="text" name="username" required>
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="auth-title">Регистрация</h2>
+
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label class="form-label">Имя пользователя:</label>
+                <input type="text" name="username" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Пароль:</label>
+                <input type="password" name="password" class="form-input" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block auth-submit">Зарегистрироваться</button>
+        </form>
+
+        <div class="auth-footer">
+            Уже есть аккаунт? <a href="{{ url_for('login') }}" class="auth-link">Войти</a>
+        </div>
     </div>
-    <div>
-        <label>Пароль:</label>
-        <input type="password" name="password" required>
-    </div>
-    <button type="submit">Зарегистрироваться</button>
-</form>
+</div>
 {% endblock %}

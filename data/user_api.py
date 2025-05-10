@@ -19,7 +19,7 @@ blueprint = flask.Blueprint(
 @blueprint.route('/api/users/get_stat_user/<id>', methods=['GET'])
 def get_user_stats(id):
     db_sess = db_session.create_session()
-    stats = db_sess.query(StatsUsers).filter(StatsUsers.id == id).one()
+    stats = db_sess.query(StatsUsers).filter(StatsUsers.id == id).first()
     if not stats:
         return make_response(jsonify({'error': 'User not found'}))
     return jsonify(
@@ -35,7 +35,7 @@ def get_user_stats(id):
 @blueprint.route('/api/users/get_stat_business/<id>', methods=['GET'])
 def get_business_stats(id):
     db_sess = db_session.create_session()
-    stats = db_sess.query(StatsBusiness).filter(StatsBusiness.id == id).one()
+    stats = db_sess.query(StatsBusiness).filter(StatsBusiness.id == id).first()
     if not stats:
         return make_response(jsonify({'error': 'User not found'}))
     return jsonify(
@@ -67,7 +67,7 @@ def add_business():
 @blueprint.route('/api/users/get_businesses/<id>', methods=['GET'])
 def get_businesses(id):
     db_sess = db_session.create_session()
-    business_ids = db_sess.query(User).filter(User.id == id).one()
+    business_ids = db_sess.query(User).filter(User.id == id).first()
     if not business_ids:
         return make_response(jsonify({'error': 'User not found or User have zero businesses'}))
     businesses = db_sess.query(Business).filter(Business.id in business_ids).all()
