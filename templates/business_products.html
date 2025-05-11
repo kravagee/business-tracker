@@ -1,37 +1,65 @@
 {% extends "base.html" %}
 {% block content %}
 <body>
-    <div class="container">
-        {% if access %}
-        <h1>Список закупок бизнеса</h1>
+<div class="container">
+    {% if access %}
+    <h1>Список закупок бизнеса</h1>
 
-        <div class="purchases-header">
-            <h2>Всего закупок: {{ purchases|length }}</h2>
-            <button class="add-purchase-btn">+ Добавить закупку</button>
-        </div>
+    <div class="purchases-header">
+        <h2>Всего закупок: {{ purchases|length }}</h2>
+        <a href="{{ url_for('business_add_product', biz_id=bizz_id) }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Добавить закупку
+        </a>
+    </div>
 
-        <div class="purchases-list">
-            {% if purchases %}
-                {% for purchase in purchases %}
-                    <a href="{{ url_for('edit_product', biz_id=bizz_id, id=purchase.id) }}" class="purchase-card">
-                        <div class="purchase-info">
-                            <div class="purchase-name">{{ purchase.name }}</div>
-                            <div class="purchase-details">
-                                <div class="purchase-price">{{ purchase.price }} ₽</div>
-                                <div class="purchase-status">
-                                    {{ purchase.status }}
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                {% endfor %}
+    <div class="purchases-list">
+        {% if purchases %}
+        {% for purchase in purchases %}
+        <div class="purchase-card">
+            {% if purchase.image %}
+            <div class="purchase-image-container">
+                <img src="{{ url_for('static', filename=purchase.image) }}"
+                     alt="{{ purchase.name }}"
+                     class="purchase-image"
+                     onerror="this.style.display='none'">
+            </div>
             {% else %}
-                <div class="empty-list">Нет доступных закупок</div>
+            <div class="purchase-image-container no-image">
+                <i class="fas fa-box-open"></i>
+            </div>
             {% endif %}
+
+            <div class="purchase-info">
+                <div class="purchase-name">{{ purchase.name }}</div>
+                <div class="purchase-details">
+                    <div class="purchase-price">{{ purchase.price }} ₽</div>
+                    <div class="purchase-status status-{{ purchase.status|lower }}">
+                        {{ purchase.status }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="purchase-actions">
+                <a href="{{ url_for('edit_product', biz_id=bizz_id, id=purchase.id) }}"
+                   class="btn btn-sm btn-outline-primary action-btn"
+                   title="Редактировать">
+                    <i class="fas fa-edit"></i>Редактировать
+                </a>
+            </div>
         </div>
+        {% endfor %}
         {% else %}
-            <div class="stat-label"> Что-то пошло не так </div>
+        <div class="empty-list">
+            <i class="fas fa-box-open fa-2x"></i>
+            <p>Нет доступных закупок</p>
+        </div>
         {% endif %}
     </div>
+    {% else %}
+    <div class="stat-label">
+        <i class="fas fa-exclamation-triangle"></i> Что-то пошло не так
+    </div>
+    {% endif %}
+</div>
 </body>
 {% endblock %}

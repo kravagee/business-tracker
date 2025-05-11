@@ -24,7 +24,7 @@
                         <tr>
                             <td>{{ manager.username }}</td>
                             <td>
-                                <a href="{{ url_for('remove_manage', biz_id=bizz_id, manager_id=manager.id) }}"
+                                <a href="{{ url_for('business_remove_manager', biz_id=bizz_id, id=manager.id) }}"
                                    class="btn btn-danger btn-sm"
                                    onclick="return confirm('Вы уверены, что хотите удалить этого менеджера?')">
                                     Удалить

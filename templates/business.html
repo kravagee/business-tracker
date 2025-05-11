@@ -1,77 +1,138 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>{{ business.name }}</h2>
-            <p>{{ business.description }}</p>
+<div class="business-container">
+    <!-- Заголовок бизнеса -->
+    <div class="business-header">
+        <div class="business-title">
+            <h1>{{ business.name }}</h1>
+            <p class="business-description">{{ business.description }}</p>
+        </div>
+        <a href="/business_list" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+    </div>
+
+    <!-- Основные карточки -->
+    <div class="business-dashboard">
+        <!-- Карточка статистики -->
+        <div class="business-card">
+            <div class="card-header">
+                <a href="{{ url_for('business_stats', id=business.id) }}" class="card-link">
+                    <i class="fas fa-chart-line"></i> Статистика
+                </a>
+            </div>
+            <div class="card-body">
+                {% if stats %}
+                <ul class="stats-list">
+                    <li class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <span>Работников: <strong>{{ stats.worker_count }}</strong></span>
+                    </li>
+                    <li class="stat-item">
+                        <i class="fas fa-boxes"></i>
+                        <span>Товаров: <strong>{{ stats.bought_products }}</strong></span>
+                    </li>
+                    <li class="stat-item">
+                        <i class="fas fa-coins"></i>
+                        <span>Потрачено: <strong>{{ stats.money_spent }} руб.</strong></span>
+                    </li>
+                </ul>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Нет данных статистики</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Карточка работников -->
+        <div class="business-card">
+            <div class="card-header">
+                <a href="{{ url_for('business_workers', id=business.id) }}" class="card-link">
+                    <i class="fas fa-user-tie"></i> Работники
+                </a>
+            </div>
+            <div class="card-body">
+                {% if workers %}
+                <ul class="workers-list">
+                    {% for worker in workers %}
+                    <li class="worker-item">
+                        <div class="worker-info">
+                            <i class="fas fa-user"></i>
+                            <div>
+                                <strong>{{ worker.name }} {{ worker.surname }}</strong>
+                                <small>{{ worker.position }}</small>
+                            </div>
+                        </div>
+                        <span class="worker-salary">{{ worker.salary }} руб.</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-user-tie"></i>
+                    <p>Нет работников</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Карточка товаров -->
+        <div class="business-card">
+            <div class="card-header">
+                <a href="{{ url_for('business_products', id=business.id) }}" class="card-link">
+                    <i class="fas fa-box-open"></i> Товары
+                </a>
+            </div>
+            <div class="card-body">
+                {% if products %}
+                <ul class="products-list">
+                    {% for product in products %}
+                    <li class="product-item">
+                        <div class="product-info">
+                            <i class="fas fa-box"></i>
+                            <span>{{ product.name }}</span>
+                        </div>
+                        <span class="product-price">{{ product.price }} руб.</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-box-open"></i>
+                    <p>Нет товаров</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Карточка менеджеров -->
+        <div class="business-card">
+            <div class="card-header">
+                <a href="{{ url_for('business_manager_list', biz_id=business.id) }}" class="card-link">
+                    <i class="fas fa-user-shield"></i> Менеджеры
+                </a>
+            </div>
+            <div class="card-body">
+                {% if managers %}
+                <ul class="managers-list">
+                    {% for manager in managers %}
+                    <li class="manager-item">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ manager.username }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-user-shield"></i>
+                    <p>Нет менеджеров</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-    
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Статистика</h5>
-                </div>
-                <div class="card-body">
-                    {% if stats %}
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Работников: {{ stats.worker_count }}</li>
-                        <li class="list-group-item">Товаров: {{ stats.bought_products }}</li>
-                        <li class="list-group-item">Потрачено: {{ stats.money_spent }} руб.</li>
-                    </ul>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Работники</h5>
-                </div>
-                <div class="card-body">
-                    {% if workers %}
-                    <ul class="list-group">
-                        {% for worker in workers %}
-                        <li class="list-group-item">
-                            {{ worker.name }} {{ worker.surname }} - {{ worker.position }}
-                            <span class="badge badge-primary float-right">{{ worker.salary }} руб.</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="text-muted">Нет работников</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Товары</h5>
-                </div>
-                <div class="card-body">
-                    {% if products %}
-                    <ul class="list-group">
-                        {% for product in products %}
-                        <li class="list-group-item">
-                            {{ product.name }}
-                            <span class="badge badge-secondary float-right">{{ product.price }} руб.</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="text-muted">Нет товаров</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <a href="/business_list" class="btn btn-secondary">Назад к списку</a>
 </div>
 {% endblock %}

@@ -14,9 +14,10 @@ blueprint = flask.Blueprint(
 )
 
 
-def api_key_check(func):
+def api_key_check_business(func):
     def wrapper(*args, **kwargs):
-        if not 'api_key' in kwargs.keys():
+        us_ap_k = request.args.get('api_key')
+        if not us_ap_k:
             return make_response(jsonify({'error': 'Miss api key'}), 400)
         db_sess = db_session.create_session()
         us = db_sess.query(Business).filter(Business.id == args[0]).first()
@@ -28,7 +29,7 @@ def api_key_check(func):
     return wrapper
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/add_manager/<id>', methods=['POST'])
 def add_manager(id):
     db_sess = db_session.create_session()
@@ -47,7 +48,7 @@ def add_manager(id):
     return make_response(jsonify({'success': 'Manager added'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/delete_manager/<id>', methods=['DELETE'])
 def delete_manager(id):
     db_sess = db_session.create_session()
@@ -65,7 +66,7 @@ def delete_manager(id):
     return make_response(jsonify({'success': 'Manager deleted'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/add_worker/<id>', methods=['POST'])
 def add_worker(id):
     db_sess = db_session.create_session()
@@ -84,7 +85,7 @@ def add_worker(id):
     return make_response(jsonify({'success': 'Worker added'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/edit_worker/<id>', methods=['PUT'])
 def edit_worker(id):
     if not request.json:
@@ -105,7 +106,7 @@ def edit_worker(id):
     return make_response(jsonify({'success': 'Worker edited'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/delete_worker/<id>', methods=['DELETE'])
 def delete_worker(id):
     db_sess = db_session.create_session()
@@ -123,7 +124,7 @@ def delete_worker(id):
     return make_response(jsonify({'success': 'Worker deleted'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/add_product/<id>', methods=['POST'])
 def add_product(id):
     db_sess = db_session.create_session()
@@ -139,7 +140,7 @@ def add_product(id):
     return make_response(jsonify({'success': 'Product added'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/edit_product/<id>', methods=['PUT'])
 def edit_product(id):
     if not request.json:
@@ -160,7 +161,7 @@ def edit_product(id):
     return make_response(jsonify({'success': 'Product edited'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/delete_product/<id>', methods=['DELETE'])
 def delete_product(id):
     db_sess = db_session.create_session()
@@ -178,7 +179,7 @@ def delete_product(id):
     return make_response(jsonify({'success': 'Product deleted'}), 200)
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/get_products/<id>', methods=['GET'])
 def get_products(id):
     db_sess = db_session.create_session()
@@ -195,7 +196,7 @@ def get_products(id):
         }
     )
 
-
+@api_key_check_business
 @blueprint.route('/api/business/get_product/<id>', methods=['GET'])
 def get_product(id):
     db_sess = db_session.create_session()
@@ -208,7 +209,7 @@ def get_product(id):
     )
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/get_managers/<id>', methods=['GET'])
 def get_managers(id):
     db_sess = db_session.create_session()
@@ -240,7 +241,7 @@ def get_manager(id):
     )
 
 
-@api_key_check
+@api_key_check_business
 @blueprint.route('/api/business/get_workers/<id>', methods=['GET'])
 def get_workers(id):
     db_sess = db_session.create_session()
@@ -257,7 +258,7 @@ def get_workers(id):
         }
     )
 
-
+@api_key_check_business
 @blueprint.route('/api/business/get_worker/<id>', methods=['GET'])
 def get_worker(id):
     db_sess = db_session.create_session()
@@ -271,7 +272,7 @@ def get_worker(id):
         }
     )
 
-
+@api_key_check_business
 @blueprint.route('/api/business/create_worker', methods=['POST'])
 def create_worker():
     if not request.json:
@@ -290,7 +291,7 @@ def create_worker():
     db_sess.commit()
     return jsonify({'id': worker.id})
 
-
+@api_key_check_business
 @blueprint.route('/api/business/create_product', methods=['POST'])
 def create_product():
     if not request.json:

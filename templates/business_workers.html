@@ -6,16 +6,16 @@
 
         <div class="employees-header">
             <h2>Всего сотрудников: {{ employees|length }}</h2>
-            <a href="{{ url_for('business_add_worker', id=bizz_id) }}"></a>
+            <a href="{{ url_for('business_add_worker', id=bizz_id) }}">Добавить сотрудника</a>
         </div>
 
         <table class="employees-table">
             <thead>
             <tr>
-                <th>ФИ</th>
-                <th>Должность</th>
-                <th>Зарплата</th>
-                <th>Действия</th>
+                <th>ФИ |</th>
+                <th> Должность |</th>
+                <th> Зарплата |</th>
+                <th> Действия |</th>
             </tr>
             </thead>
             <tbody>

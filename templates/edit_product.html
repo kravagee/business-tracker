@@ -38,10 +38,7 @@
                 {% if purchase.image %}
                     <div>
                         <p>Текущее изображение:</p>
-                        <img src="{{ purchase.image }}" alt="Current image" style="max-width: 200px;">
-                        <label>
-                            <input type="checkbox" name="delete_image"> Удалить изображение
-                        </label>
+                        <img src="{{ url_for('static', filename=purchase.image) }}" alt="Current image" style="max-width: 200px;">
                     </div>
                 {% endif %}
             </div>

@@ -51,6 +51,7 @@ def register():
             return render_template('register.html')
         user.username = username
         user.set_password(password)
+        user.api_key = generate_api_key()
 
         db_sess.add(user)
         db_sess.commit()
@@ -168,13 +169,18 @@ def business_list():
 @login_required
 def business(id):
     db_sess = db_session.create_session()
-    biz = db_sess.query(Business).get(id)
+    biz = db_sess.query(Business).filter(Business.id == id).first()
     if not biz:
         flash('Бизнес не найден')
         return redirect('/business_list')
     workers = db_sess.query(Worker).filter(Worker.business_id == id).all()
     products = db_sess.query(Product).filter(Product.business_id == id).all()
-    managers = biz.manager_list
+    mans = dict()
+    mans['id'] = []
+    if biz.manager_list:
+        mans = json.loads(biz.managers_list)
+
+    managers = db_sess.query(User).filter(User.id in mans['id']).all()
     stats = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
 
     return render_template('business.html',
@@ -212,7 +218,10 @@ def business_stats(id):
     db_sess = db_session.create_session()
     st_biz = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
     biz = db_sess.query(Business).filter(Business.id == id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('business_stats.html', user=current_user, stats=st_biz, access=False)
     return render_template('business_stats.html', user=current_user, stats=st_biz, access=True)
 
@@ -222,10 +231,13 @@ def business_stats(id):
 def business_products(id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == id).first()
-    prods = db_sess.query(Product).filter(Product.id in Business.product_list['id']).all()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
-        return render_template('business_products.html', user=current_user, purchases=prods, access=False)
-    return render_template('business_products.html', user=current_user, purchases=prods, access=True)
+    prods = db_sess.query(Product).filter(Product.business_id == biz.id).all()
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
+        return render_template('business_products.html', user=current_user, bizz_id=biz.id, purchases=prods, access=False)
+    return render_template('business_products.html', user=current_user, bizz_id=biz.id, purchases=prods, access=True)
 
 
 @app.route('/business/<biz_id>/edit_product/<id>', methods=['GET', 'POST'])
@@ -234,19 +246,22 @@ def edit_product(biz_id, id):
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('edit_product.html', user=current_user, bizz_id=biz_id, access=False)
     if request.method == 'GET':
         return render_template('edit_product.html', user=current_user, purchase=product, bizz_id=biz_id, access=True)
     product.name = request.form['name']
     product.status = request.form['status']
-    image = request.form['image']
-    img_path = './static/images/' + image.filename
-    image.save(img_path)
+    image = request.files['image']
+    img_path = 'images/' + image.filename
+    image.save('static/' + img_path)
+    product.image = img_path
     product.image = img_path
     product.price = request.form['price']
     db_sess.commit()
-    db_sess.close()
     return render_template('edit_product.html', user=current_user, bizz_id=biz_id, purchase=product, access=True)
 
 
@@ -255,8 +270,11 @@ def edit_product(biz_id, id):
 def business_workers(id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == id).first()
-    workers = db_sess.query(Worker).filter(Worker.id in Business.worker_list['id']).all()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    workers = db_sess.query(Worker).filter(Worker.business_id == id).all()
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('business_workers.html', user=current_user, employees=workers, bizz_id=id, access=False)
     return render_template('business_workers.html', user=current_user, employees=workers, bizz_id=id, access=True)
 
@@ -266,7 +284,10 @@ def business_workers(id):
 def business_add_worker(id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('add_worker.html', user=current_user, biz=biz, access=False)
     if request.method == 'GET':
         return render_template('add_worker.html', user=current_user, biz=biz, access=True)
@@ -278,7 +299,19 @@ def business_add_worker(id):
     new_work.position = request.form['position']
     db_sess.add(new_work)
     db_sess.commit()
-    db_sess.close()
+
+    if not biz.worker_list:
+        wor = dict()
+        wor['id'] = [new_work.id]
+    else:
+        wor = json.loads(biz.worker_list)
+        wor['id'].append(new_work.id)
+    biz.worker_list = json.dumps(wor)
+
+    stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
+    stat.worker_count += 1
+
+    db_sess.commit()
     return render_template('add_worker.html', user=current_user, access=True, biz=biz)
 
 
@@ -288,7 +321,10 @@ def business_edit_worker(biz_id, id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     work = db_sess.query(Worker).filter(Worker.id == id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('edit_worker.html', user=current_user, work=work, biz=biz, access=False)
     if request.method == 'GET':
         return render_template('edit_worker.html', biz=biz, user=current_user, access=True, work=work)
@@ -300,17 +336,32 @@ def business_edit_worker(biz_id, id):
     return render_template('edit_worker.html', biz=biz, user=current_user, access=True, work=work)
 
 
-@app.route('/business/<biz_id>/delete_worker/<id>', methods=['POST'])
+@app.route('/business/<biz_id>/delete_worker/<id>', methods=['POST', 'GET'])
 @login_required
 def business_delete_worker(biz_id, id):
     db_sess = db_session.create_session()
     work = db_sess.query(Worker).filter(Worker.id == id).first()
-    biz = db_sess.query(Business).filter(Business.id == id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return make_response(jsonify({'error': 'Access Denied'}), 403)
     db_sess.delete(work)
+
+    if biz.worker_list:
+        wor = json.loads(biz.worker_list)
+    else:
+        wor = dict()
+        wor['id'] = []
+    if id in wor['id']:
+        wor['id'].remove(id)
+    biz.worker_list = json.dumps(wor)
+
+    stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
+    stat.worker_count -= 1
+
     db_sess.commit()
-    db_sess.close()
     return redirect(url_for('business_workers', id=biz_id))
 
 
@@ -319,19 +370,29 @@ def business_delete_worker(biz_id, id):
 def business_add_product(biz_id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('add_product.html', user=current_user, bizz_id=biz_id, access=False)
     if request.method == 'GET':
         return render_template('add_product.html', user=current_user, bizz_id=biz_id, access=True)
     new_prod = Product()
     new_prod.name = request.form['name']
     new_prod.status = request.form['status']
-    image = request.form['image']
-    img_path = './static/images/' + image.filename
-    image.save(img_path)
+    image = request.files['image']
+    img_path = 'images/' + image.filename
+    image.save('static/' + img_path)
     new_prod.image = img_path
     new_prod.price = request.form['price']
+    new_prod.business_id = biz_id
     db_sess.add(new_prod)
+    db_sess.commit()
+
+    stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
+    stat.bought_products += 1
+    stat.money_spent += new_prod.price
+
     db_sess.commit()
     db_sess.close()
     return render_template('add_product.html', user=current_user, bizz_id=biz_id, access=True)
@@ -342,8 +403,12 @@ def business_add_product(biz_id):
 def business_manager_list(biz_id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
-    managers = db_sess.query(User).filter(User.id in Business.manager_list['id']).all()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    print(man_list)
+    managers = db_sess.query(User).filter(User.id.in_(man_list['id'])).all()
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('business_managers.html', user=current_user, managers=managers, bizz_id=biz_id,
                                access=False)
     return render_template('business_managers.html', user=current_user, managers=managers, bizz_id=biz_id, access=True)
@@ -351,25 +416,49 @@ def business_manager_list(biz_id):
 
 @app.route('/business/<biz_id>/add_manager', methods=['GET', 'POST'])
 @login_required
-def business_add_manger(biz_id):
+def business_add_manager(biz_id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('add_manager.html', user=current_user, access=False)
     if request.method == 'GET':
         return render_template('add_manager.html', user=current_user, access=True)
     manag = db_sess.query(User).filter(User.username == request.form['manag_username']).first()
-    biz.manager_list['id'].append(manag.id)
+    if manag.id not in man_list['id']:
+        man_list['id'].append(manag.id)
+    biz.manager_list = json.dumps(man_list)
+
+    if manag.business_manager_list:
+        mans_l = json.loads(manag.business_manager_list)
+        mans_l['id'] = [biz.id]
+    else:
+        mans_l = dict()
+        mans_l['id'] = [biz.id]
+    manag.business_manager_list = json.dumps(mans_l)
+
+    db_sess.commit()
     return render_template('add_manager.html', user=current_user, access=True)
 
 
-@app.route('/business/<biz_id>/remove_manager/<id>', methods=['POST'])
+@app.route('/business/<biz_id>/remove_manager/<id>', methods=['POST', 'GET'])
+@login_required
 def business_remove_manager(biz_id, id):
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
-    if biz.owner_id != current_user.id or current_user.id not in biz.manager_list['id'] or not biz:
+    man_list = {'id': []}
+    if biz.manager_list:
+        man_list = json.loads(biz.manager_list)
+    if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return make_response(jsonify({'error': 'Access denied'}), 403)
-    biz.manager_list['id'].remove(id)
+    if id in man_list['id']:
+        man_list['id'].remove(id)
+    us = db_sess.query(User).filter(User.id == id).first()
+    mans_l = json.loads(us.business_manager_list)
+    mans_l.remove(id)
+    us.business_manager_list = json.dumps(mans_l)
     db_sess.commit()
     db_sess.close()
     return redirect(url_for('business_manager_list', biz_id=biz_id))

@@ -553,3 +553,331 @@ body {
         font-size: 1.5rem;
     }
 }
+
+/* Стили для списка закупок */
+.purchases-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.purchase-card {
+    display: flex;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: white;
+    position: relative;
+}
+
+.purchase-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.purchase-image-container {
+    width: 120px;
+    min-width: 120px;
+    height: 120px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+}
+
+.purchase-image-container.no-image {
+    background: #f0f0f0;
+    color: #6c757d;
+    font-size: 2rem;
+}
+
+.purchase-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.purchase-card:hover .purchase-image {
+    transform: scale(1.05);
+}
+
+.purchase-info {
+    padding: 1rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.purchase-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #343a40;
+}
+
+.purchase-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.purchase-price {
+    font-weight: 700;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.purchase-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.purchase-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem;
+    border-left: 1px solid #eee;
+    background: #f9f9f9;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0.25rem 0;
+    border-radius: 50%;
+}
+
+.delete-form {
+    margin: 0;
+}
+
+.empty-list {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+}
+
+.empty-list i {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .purchases-list {
+        grid-template-columns: 1fr;
+    }
+
+    .purchase-card {
+        flex-direction: column;
+    }
+
+    .purchase-image-container {
+        width: 100%;
+        height: 180px;
+    }
+
+    .purchase-actions {
+        flex-direction: row;
+        border-left: none;
+        border-top: 1px solid #eee;
+        padding: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        margin: 0 0.25rem;
+    }
+}
+
+/* Основные стили страницы бизнеса */
+.business-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+.business-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.business-title h1 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.business-description {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    max-width: 800px;
+}
+
+.btn-back {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-back:hover {
+    background-color: #e9ecef;
+}
+
+/* Сетка карточек */
+.business-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.business-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.business-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: #4361ee;
+    padding: 1rem 1.5rem;
+}
+
+.card-link {
+    color: white;
+    font-weight: 500;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-link i {
+    font-size: 1.1rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Стили для списков */
+.stats-list, .workers-list, .products-list, .managers-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.stat-item, .worker-item, .product-item, .manager-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f1f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-item:last-child,
+.worker-item:last-child,
+.product-item:last-child,
+.manager-item:last-child {
+    border-bottom: none;
+}
+
+.stat-item i,
+.worker-item i,
+.product-item i,
+.manager-item i {
+    color: #4361ee;
+    margin-right: 0.75rem;
+    width: 20px;
+    text-align: center;
+}
+
+.worker-info, .product-info {
+    display: flex;
+    align-items: center;
+}
+
+.worker-info div {
+    display: flex;
+    flex-direction: column;
+}
+
+.worker-info small {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+.worker-salary, .product-price {
+    font-weight: 600;
+    color: #28a745;
+}
+
+/* Стили для пустых состояний */
+.no-data {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #95a5a6;
+}
+
+.no-data i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #dfe6e9;
+}
+
+.no-data p {
+    margin: 0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .business-header {
+        flex-direction: column;
+    }
+
+    .business-dashboard {
+        grid-template-columns: 1fr;
+    }
+}

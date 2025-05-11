@@ -3,7 +3,6 @@ from flask import request, make_response, jsonify
 
 from . import db_session
 from .business import Business
-from .business_api import api_key_check
 from .stats_business import StatsBusiness
 from .stats_users import StatsUsers
 from .user import User
@@ -14,9 +13,21 @@ blueprint = flask.Blueprint(
     template_folder='templates'
 )
 
+def api_key_check_user(func):
+    def wrapper(*args, **kwargs):
+        us_ap_k = request.args.get('api_key')
+        if not us_ap_k:
+            return make_response(jsonify({'error': 'Miss api key'}), 400)
+        db_sess = db_session.create_session()
+        api_key = db_sess.query(User).filter(User.id == args[0]).first().api_key
+        if api_key != us_ap_k:
+            return make_response(jsonify({'error': 'Invalid api key'}), 403)
+        return func(*args, **kwargs)
 
-@api_key_check
+    return wrapper
+
 @blueprint.route('/api/users/get_stat_user/<id>', methods=['GET'])
+@api_key_check_user
 def get_user_stats(id):
     db_sess = db_session.create_session()
     stats = db_sess.query(StatsUsers).filter(StatsUsers.id == id).first()
@@ -25,13 +36,12 @@ def get_user_stats(id):
     return jsonify(
         {
             'stats':
-                [item.to_dict(only=('business_count', 'business_management_count'))
-                 for item in stats]
+                stats.to_dict(only=('business_count', 'business_management_count'))
         }
     )
 
 
-@api_key_check
+@api_key_check_user
 @blueprint.route('/api/users/get_stat_business/<id>', methods=['GET'])
 def get_business_stats(id):
     db_sess = db_session.create_session()
@@ -41,13 +51,12 @@ def get_business_stats(id):
     return jsonify(
         {
             'stats':
-                [item.to_dict(only=('bought_products', 'money_spent', 'worker_count'))
-                 for item in stats]
+                stats.to_dict(only=('bought_products', 'money_spent', 'worker_count'))
         }
     )
 
 
-@api_key_check
+@api_key_check_user
 @blueprint.route('/api/users/add_business/', methods=['POST'])
 def add_business():
     if not request.json:
@@ -63,14 +72,14 @@ def add_business():
     db_sess.close()
 
 
-@api_key_check
+@api_key_check_user
 @blueprint.route('/api/users/get_businesses/<id>', methods=['GET'])
 def get_businesses(id):
     db_sess = db_session.create_session()
     business_ids = db_sess.query(User).filter(User.id == id).first()
     if not business_ids:
         return make_response(jsonify({'error': 'User not found or User have zero businesses'}))
-    businesses = db_sess.query(Business).filter(Business.id in business_ids).all()
+    businesses = db_sess.query(Business).filter(Business.id.in_(business_ids)).all()
     return jsonify(
         {
             'businesses':

@@ -18,9 +18,9 @@
             <div class="form-group">
                 <label for="status">Статус:</label>
                 <select class="form-control" id="status" name="status">
-                    <option value="active">Активный</option>
-                    <option value="inactive">Неактивный</option>
-                    <option value="pending" selected>Ожидание</option>
+                    <option value="active">На складе</option>
+                    <option value="inactive">Использован</option>
+                    <option value="pending" selected>Доставляется</option>
                 </select>
             </div>
 
@@ -32,7 +32,7 @@
 
             <div class="form-actions mt-4">
                 <button type="submit" class="btn btn-primary">Добавить продукт</button>
-                <a href="{{ url_for('business_products', biz_id=bizz_id) }}" class="btn btn-secondary ml-2">Отмена</a>
+                <a href="{{ url_for('business_products', id=bizz_id) }}" class="btn btn-secondary ml-2">Отмена</a>
             </div>
         </form>
     {% else %}
