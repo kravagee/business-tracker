@@ -3,3 +3,4 @@ Werkzeug
 SQLAlchemy
 Flask
 requests
+sqlalchemy_serializer
