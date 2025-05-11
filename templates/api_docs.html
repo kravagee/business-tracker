@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="api-documentation">
+    <h1>Документация API</h1>
+
+    <div class="api-key-section">
+        <h2>API ключ доступа</h2>
+        <div class="api-key-box">
+            <p>Ваш секретный ключ: <strong>{{ current_user.api_key }}</strong></p>
+            <p class="warning">Не передавайте этот ключ третьим лицам!</p>
+        </div>
+    </div>
+
+    <div class="api-section">
+        <h2>Business API</h2>
+
+        <div class="endpoint">
+            <h3>1. Получение статистики бизнеса</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/business/get_stat_business/&lt;biz_id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>2. Добавление менеджера</h3>
+            <p><strong>Метод:</strong> POST</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/add_manager/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>3. Удаление менеджера</h3>
+            <p><strong>Метод:</strong> DELETE</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/delete_manager/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>4. Редактирование работника</h3>
+            <p><strong>Метод:</strong> PUT</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/edit_worker/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса (JSON):</strong>
+            <pre>{
+    "surname": "string",
+    "name": "string",
+    "salary": number,
+    "position": "string"
+}</pre>
+            </p>
+        </div>
+
+        <div class="endpoint">
+            <h3>5. Удаление работника</h3>
+            <p><strong>Метод:</strong> DELETE</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/delete_worker/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>6. Редактирование товара</h3>
+            <p><strong>Метод:</strong> PUT</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/edit_product/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса (JSON):</strong>
+            <pre>{
+    "status": "На складе|Использован|Доставляется",
+    "name": "string",
+    "price": number
+}</pre>
+            </p>
+        </div>
+
+        <div class="endpoint">
+            <h3>7. Получение списка товаров</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/business/get_products/&lt;biz_id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>8. Получение информации о товаре</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/get_product/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>9. Получение списка работников</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/business/get_workers/&lt;biz_id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>10. Получение информации о работнике</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/get_worker/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>11. Создание работника</h3>
+            <p><strong>Метод:</strong> POST</p>
+            <p><strong>URL:</strong> /api/business/&lt;biz_id&gt;/create_worker</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса (JSON):</strong>
+            <pre>{
+    "surname": "string",
+    "name": "string",
+    "position": "string",
+    "salary": number
+}</pre>
+            </p>
+        </div>
+    </div>
+
+    <div class="api-section">
+        <h2>Users API</h2>
+
+        <div class="endpoint">
+            <h3>1. Получение статистики пользователя</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/users/get_stat_user/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+
+        <div class="endpoint">
+            <h3>2. Добавление бизнеса</h3>
+            <p><strong>Метод:</strong> POST</p>
+            <p><strong>URL:</strong> /api/users/&lt;id&gt;/add_business</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса (JSON):</strong>
+            <pre>{
+    "name": "string",
+    "description": "string"
+}</pre>
+            </p>
+        </div>
+
+        <div class="endpoint">
+            <h3>3. Получение списка бизнесов</h3>
+            <p><strong>Метод:</strong> GET</p>
+            <p><strong>URL:</strong> /api/users/get_businesses/&lt;id&gt;</p>
+            <p><strong>Параметры:</strong> api_key</p>
+            <p><strong>Тело запроса:</strong> Не требуется</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

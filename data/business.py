@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, ForeignKey, JSON, DateTime, Table, TEXT
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, TEXT
 from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 

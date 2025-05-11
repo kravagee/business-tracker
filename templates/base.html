@@ -14,6 +14,7 @@
                 <span class="navbar-brand mr-2">{{ current_user.name }}</span>
                 <a class="btn btn-danger" href="/logout">Выйти</a>
                 <a href="{{ url_for('home')}}">На домашнюю страницу</a>
+                <a href="{{ url_for('docs_api') }}">API</a>
             </div>
         {% else %}
             <p>

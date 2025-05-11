@@ -33,6 +33,7 @@
                 <div class="purchase-name">{{ purchase.name }}</div>
                 <div class="purchase-details">
                     <div class="purchase-price">{{ purchase.price }} ₽</div>
+                    <div class="purchase-status">Айди в бд: {{ purchase.id }}</div>
                     <div class="purchase-status status-{{ purchase.status|lower }}">
                         {{ purchase.status }}
                     </div>

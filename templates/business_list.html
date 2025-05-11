@@ -12,6 +12,7 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ business.name }}</h5>
                     <p class="card-text">{{ business.description }}</p>
+                    <p class="card-text">Айди в бд:{{ business.id }}</p>
                     {% if stats %}
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">Работников: {{ stats.worker_count }}</li>

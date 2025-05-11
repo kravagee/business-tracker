@@ -1,0 +1,5 @@
+Flask-Login
+Werkzeug
+SQLAlchemy
+Flask
+requests

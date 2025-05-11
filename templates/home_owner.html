@@ -4,9 +4,17 @@
 <div class="container">
     <div class="row">
         <div class="col-md-8">
-            <h2>Добро пожаловать, {{ current_user.username }}!</h2>
-            <p class="lead">Вы зарегистрированы как <span class="badge badge-primary">владелец бизнеса</span></p>
-            
+            <div class="welcome-header">
+                <h2>Добро пожаловать, {{ current_user.username }}!</h2>
+                <div class="user-info">
+                    <p class="lead">Ваш статус: <span class="badge badge-primary">владелец бизнеса</span></p>
+                    <p class="user-id">
+                        <i class="fas fa-database"></i> ID в базе данных:
+                        <span class="badge badge-secondary">{{ current_user.id }}</span>
+                    </p>
+                </div>
+            </div>
+
             {% if stats %}
             <div class="card mb-4">
                 <div class="card-header">
@@ -15,28 +23,35 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
-                            <div class="card">
+                            <div class="stat-card">
                                 <div class="card-body text-center">
                                     <h3>{{ stats.business_count }}</h3>
                                     <p class="text-muted">Бизнесов</p>
                                 </div>
                             </div>
                         </div>
+                        <!-- Можно добавить дополнительные карточки статистики -->
                     </div>
                 </div>
             </div>
             {% endif %}
         </div>
-        
+
         <div class="col-md-4">
-            <div class="card">
+            <div class="actions-card">
                 <div class="card-header">
-                    <h5>Действия</h5>
+                    <h5>Быстрые действия</h5>
                 </div>
                 <div class="card-body">
-                    <a href="/business_list" class="btn btn-primary btn-block mb-2">Мои бизнесы</a>
-                    <a href="/create_business" class="btn btn-success btn-block mb-2">Создать бизнес</a>
-                    <a href="/top" class="btn btn-info btn-block mb-2">Топ бизнесов</a>
+                    <a href="/business_list" class="btn btn-primary btn-block mb-2">
+                        <i class="fas fa-building"></i> Мои бизнесы
+                    </a>
+                    <a href="/create_business" class="btn btn-success btn-block mb-2">
+                        <i class="fas fa-plus-circle"></i> Создать бизнес
+                    </a>
+                    <a href="/top" class="btn btn-info btn-block mb-2">
+                        <i class="fas fa-trophy"></i> Топ бизнесов
+                    </a>
                 </div>
             </div>
         </div>

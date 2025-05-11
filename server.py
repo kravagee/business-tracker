@@ -121,7 +121,6 @@ def create_business():
             us.business_owner_list = json.dumps(list_biz)
             db_sess.commit()
 
-
         # Создаем статистику для бизнеса
         biz_stats = StatsBusiness(
             business_id=business.id,
@@ -150,7 +149,8 @@ def business_list():
     db_sess = db_session.create_session()
     bizes = []
     if current_user.business_manager_list and current_user.business_owner_list:
-        bizes = json.loads(current_user.business_owner_list)['id'] + json.loads(current_user.business_manager_list)['id']
+        bizes = json.loads(current_user.business_owner_list)['id'] + json.loads(current_user.business_manager_list)[
+            'id']
     elif current_user.business_manager_list:
         bizes = json.loads(current_user.business_manager_list)['id']
     elif current_user.business_owner_list:
@@ -178,7 +178,7 @@ def business(id):
     mans = dict()
     mans['id'] = []
     if biz.manager_list:
-        mans = json.loads(biz.managers_list)
+        mans = json.loads(biz.manager_list)
 
     managers = db_sess.query(User).filter(User.id in mans['id']).all()
     stats = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
@@ -236,7 +236,8 @@ def business_products(id):
     if biz.manager_list:
         man_list = json.loads(biz.manager_list)
     if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
-        return render_template('business_products.html', user=current_user, bizz_id=biz.id, purchases=prods, access=False)
+        return render_template('business_products.html', user=current_user, bizz_id=biz.id, purchases=prods,
+                               access=False)
     return render_template('business_products.html', user=current_user, bizz_id=biz.id, purchases=prods, access=True)
 
 
@@ -389,6 +390,15 @@ def business_add_product(biz_id):
     db_sess.add(new_prod)
     db_sess.commit()
 
+    if biz.product_list:
+        pr_l = json.loads(biz.product_list)
+        pr_l['id'].append(new_prod.id)
+    else:
+        pr_l = dict()
+        pr_l['id'] = [new_prod.id]
+
+    biz.product_list = json.dumps(pr_l)
+
     stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
     stat.bought_products += 1
     stat.money_spent += new_prod.price
@@ -462,6 +472,12 @@ def business_remove_manager(biz_id, id):
     db_sess.commit()
     db_sess.close()
     return redirect(url_for('business_manager_list', biz_id=biz_id))
+
+
+@app.route('/api-docs', methods=['GET'])
+@login_required
+def docs_api():
+    return render_template('api_docs.html', current_user=current_user)
 
 
 # Выход

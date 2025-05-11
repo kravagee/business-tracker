@@ -1,9 +1,13 @@
+import json
+from functools import wraps
+
 import flask
 from flask import request, make_response, jsonify
 
 from . import db_session
 from .business import Business
 from .product import Product
+from .stats_business import StatsBusiness
 from .user import User
 from .worker import Worker
 
@@ -15,50 +19,90 @@ blueprint = flask.Blueprint(
 
 
 def api_key_check_business(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         us_ap_k = request.args.get('api_key')
         if not us_ap_k:
             return make_response(jsonify({'error': 'Miss api key'}), 400)
         db_sess = db_session.create_session()
-        us = db_sess.query(Business).filter(Business.id == args[0]).first()
+        us = db_sess.query(Business).filter(Business.id == kwargs['biz_id']).first()
         api_key = db_sess.query(User).filter(User.id == us.owner_id).first().api_key
-        if api_key != kwargs['api_key']:
+        if api_key != us_ap_k:
             return make_response(jsonify({'error': 'Invalid api key'}), 403)
         return func(*args, **kwargs)
 
     return wrapper
 
 
+@blueprint.route('/api/business/get_stat_business/<biz_id>', methods=['GET'])
 @api_key_check_business
-@blueprint.route('/api/business/add_manager/<id>', methods=['POST'])
-def add_manager(id):
+def get_business_stats(biz_id):
     db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
+    stats = db_sess.query(StatsBusiness).filter(StatsBusiness.id == biz_id).first()
+    if not stats:
+        return make_response(jsonify({'error': 'User not found'}))
+    return jsonify(
+        {
+            'stats':
+                stats.to_dict(only=('bought_products', 'money_spent', 'worker_count'))
+        }
+    )
+
+
+@blueprint.route('/api/business/<biz_id>/add_manager/<id>', methods=['POST'])
+@api_key_check_business
+def add_manager(biz_id, id):
+    db_sess = db_session.create_session()
+    bus = db_sess.query(Business).filter(Business.id == int(biz_id)).first()
+    id = int(id)
     if not bus:
         return make_response(jsonify({'error': 'Business not found'}), 404)
     if not bus.manager_list:
-        bus.manager_list = {'id': [request.json['manager_id']]}
+        man_list = {'id': [id]}
+        bus.manager_list = json.dumps(man_list)
     else:
-        if not id in bus.manager_list['id']:
-            bus.manager_list['id'].append(request.json['manager_id'])
+        man_list = json.loads(bus.manager_list)
+        print(man_list, id)
+        if not id in man_list['id']:
+            man_list['id'].append(id)
+            bus.manager_list = json.dumps(man_list)
         else:
             return make_response(jsonify({'error': 'Manager already added'}), 400)
+
+    man = db_sess.query(User).filter(User.id == id).first()
+    if man.business_manager_list:
+        m_l = json.loads(man.business_manager_list)
+        m_l['id'].append(int(biz_id))
+    else:
+        m_l = dict()
+        m_l['id'] = [int(biz_id)]
+    man.business_manager_list = json.dumps(m_l)
+
     db_sess.commit()
     db_sess.close()
     return make_response(jsonify({'success': 'Manager added'}), 200)
 
 
+@blueprint.route('/api/business/<biz_id>/delete_manager/<id>', methods=['DELETE'])
 @api_key_check_business
-@blueprint.route('/api/business/delete_manager/<id>', methods=['DELETE'])
-def delete_manager(id):
+def delete_manager(biz_id, id):
     db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
+    biz_id, id = int(biz_id), int(id)
+    bus = db_sess.query(Business).filter(Business.id == biz_id).first()
     if not bus:
         return make_response(jsonify({'error': 'Business not found'}), 404)
-    if not bus.manager_list or len(bus.manager_list['id']) == 0:
+    if not bus.manager_list or len(json.loads(bus.manager_list)['id']) == 0:
         return make_response(jsonify({'error': 'No managers linked to this business'}), 400)
-    if request.json['manager_id'] in bus.manager_list['id']:
-        bus.manager_list['id'].remove(request.json['manager_id'])
+    print(id, json.loads(bus.manager_list)['id'])
+    if id in json.loads(bus.manager_list)['id']:
+        man_l = json.loads(bus.manager_list)
+        man_l['id'].remove(id)
+        bus.manager_list = json.dumps(man_l)
+
+        us = db_sess.query(User).filter(User.id == id).first()
+        m_l = json.loads(us.business_manager_list)
+        m_l['id'].remove(biz_id)
+        us.business_manager_list = json.dumps(m_l)
     else:
         return make_response(jsonify({'error': 'This manager does not linked to this business'}), 400)
     db_sess.commit()
@@ -66,28 +110,10 @@ def delete_manager(id):
     return make_response(jsonify({'success': 'Manager deleted'}), 200)
 
 
+@blueprint.route('/api/business/<biz_id>/edit_worker/<id>', methods=['PUT'])
 @api_key_check_business
-@blueprint.route('/api/business/add_worker/<id>', methods=['POST'])
-def add_worker(id):
-    db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
-    if not bus:
-        return make_response(jsonify({'error': 'Business not found'}), 404)
-    if not bus.worker_list:
-        bus.worker_list = {'id': [request.json['worker_id']]}
-    else:
-        if not request.json['worker_id'] in bus.worker_list['id']:
-            bus.worker_list['id'].append(request.json['worker_id'])
-        else:
-            return make_response(jsonify({'error': 'This worker already added'}), 400)
-    db_sess.commit()
-    db_sess.close()
-    return make_response(jsonify({'success': 'Worker added'}), 200)
-
-
-@api_key_check_business
-@blueprint.route('/api/business/edit_worker/<id>', methods=['PUT'])
-def edit_worker(id):
+def edit_worker(biz_id, id):
+    biz_id, id = int(biz_id), int(id)
     if not request.json:
         return make_response(jsonify({'error': 'Empty request'}, 400))
     if not all([True if i in ['surname', 'name', 'salary', 'position'] else False
@@ -106,161 +132,126 @@ def edit_worker(id):
     return make_response(jsonify({'success': 'Worker edited'}), 200)
 
 
+@blueprint.route('/api/business/<biz_id>/delete_worker/<id>', methods=['DELETE'])
 @api_key_check_business
-@blueprint.route('/api/business/delete_worker/<id>', methods=['DELETE'])
-def delete_worker(id):
+def delete_worker(biz_id, id):
+    biz_id, id = int(biz_id), int(id)
     db_sess = db_session.create_session()
     bus = db_sess.query(Business).filter(Business.id == id).first()
     if not bus:
         return make_response(jsonify({'error': 'Business not found'}), 404)
-    if not bus.worker_list or len(bus.worker_list['id']) == 0:
+    if not bus.worker_list or len(json.loads(bus.worker_list)['id']) == 0:
         return make_response(jsonify({'error': 'No workers linked to this business'}), 400)
-    if request.json['worker_id'] in bus.worker_list['id']:
-        bus.worker_list['id'].remove(request.json['worker_id'])
+    if id in json.loads(bus.worker_list)['id']:
+        wo_l = json.loads(bus.worker_list)
+        wo_l['id'].remove(id)
+        bus.worker_list = json.dumps(wo_l)
     else:
         return make_response(jsonify({'error': 'This worker does not linked to this business'}), 400)
+
+    stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
+    stat.worker_count -= 1
+
+    work = db_sess.query(Worker).filter(Worker.id == id).first()
+    db_sess.delete(work)
+
     db_sess.commit()
     db_sess.close()
     return make_response(jsonify({'success': 'Worker deleted'}), 200)
 
 
+@blueprint.route('/api/business/<biz_id>/edit_product/<id>', methods=['PUT'])
 @api_key_check_business
-@blueprint.route('/api/business/add_product/<id>', methods=['POST'])
-def add_product(id):
-    db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
-    if not bus:
-        return make_response(jsonify({'error': 'Business not found'}), 404)
-    if not bus.product_list:
-        bus.product_list = {'id': [request.json['product_id']]}
-    else:
-        bus.worker_list['id'].append(request.json['product_id'])
-    db_sess.commit()
-    db_sess.close()
-    return make_response(jsonify({'success': 'Product added'}), 200)
-
-
-@api_key_check_business
-@blueprint.route('/api/business/edit_product/<id>', methods=['PUT'])
-def edit_product(id):
+def edit_product(biz_id, id):
+    biz_id, id = int(biz_id), int(id)
     if not request.json:
         return make_response(jsonify({'error': 'Empty request'}, 400))
-    if not all([True if i in ['status', 'name', 'image', 'price'] else False
+    if not all([True if i in ['status', 'name', 'price'] else False
                 for i in request.json]):
         return make_response(jsonify({'error': 'Bad request'}, 400))
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
     if not product:
         return make_response(jsonify({'error': 'Product not found'}, 404))
+    if 'status' in request.json.keys():
+        if request.json['status'] not in ['На складе', 'Использован', 'Доставляется']:
+            return make_response(jsonify({'error': 'Bad status'}), 400)
     product.status = request.json['status'] if 'status' in request.json.keys() else product.status
     product.name = request.json['name'] if 'name' in request.json.keys() else product.name
-    product.image = request.json['image'] if 'image' in request.json.keys() else product.image
+
+    if 'price' in request.json.keys():
+        stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
+        stat.money_spent -= product.price
+        stat.money_spent += request.json['price']
+
     product.price = request.json['price'] if 'price' in request.json.keys() else product.price
+
     db_sess.commit()
     db_sess.close()
     return make_response(jsonify({'success': 'Product edited'}), 200)
 
 
+@blueprint.route('/api/business/get_products/<biz_id>', methods=['GET'])
 @api_key_check_business
-@blueprint.route('/api/business/delete_product/<id>', methods=['DELETE'])
-def delete_product(id):
+def get_products(biz_id):
     db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
-    if not bus:
-        return make_response(jsonify({'error': 'Business not found'}), 404)
-    if not bus.product_list or len(bus.product_list['id']) == 0:
-        return make_response(jsonify({'error': 'No products linked to this business'}), 400)
-    if request.json['product_id'] in bus.product_list['id']:
-        bus.product_list['id'].remove(request.json['product_id'])
-    else:
-        return make_response(jsonify({'error': 'This product does not linked to this business'}), 400)
-    db_sess.commit()
-    db_sess.close()
-    return make_response(jsonify({'success': 'Product deleted'}), 200)
-
-
-@api_key_check_business
-@blueprint.route('/api/business/get_products/<id>', methods=['GET'])
-def get_products(id):
-    db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
+    bus = db_sess.query(Business).filter(Business.id == biz_id).first()
     if not bus:
         return make_response(jsonify({'error': 'Business not found'}), 404)
     db_sess = db_session.create_session()
-    products = db_sess.query(Product).filter(Product.id in bus.product_list['id']).all()
-    return jsonify(
-        {
-            'products':
-                [item.to_dict(only=('name', 'description', 'status', 'price'))
-                 for item in products]
-        }
-    )
+    if bus.product_list:
+        products = db_sess.query(Product).filter(Product.id.in_(json.loads(bus.product_list)['id'])).all()
+        return jsonify(
+            {
+                'products':
+                    [item.to_dict(only=('name', 'status', 'price'))
+                     for item in products]
+            }
+        )
+    return make_response(jsonify({'error': 'There is not any product'}), 404)
 
+
+@blueprint.route('/api/business/<biz_id>/get_product/<id>', methods=['GET'])
 @api_key_check_business
-@blueprint.route('/api/business/get_product/<id>', methods=['GET'])
-def get_product(id):
+def get_product(biz_id, id):
+    id = int(id)
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
+    if not product:
+        return make_response(jsonify({'error': 'Product not found'}), 404)
     return jsonify(
         {
             'product':
-                product.to_dict(only=('name', 'description', 'status', 'price'))
+                product.to_dict(only=('name', 'status', 'price'))
         }
     )
 
 
+@blueprint.route('/api/business/get_workers/<biz_id>', methods=['GET'])
 @api_key_check_business
-@blueprint.route('/api/business/get_managers/<id>', methods=['GET'])
-def get_managers(id):
+def get_workers(biz_id):
+    biz_id = int(biz_id)
     db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
+    bus = db_sess.query(Business).filter(Business.id == biz_id).first()
     if not bus:
         return make_response(jsonify({'error': 'Business not found'}), 404)
     db_sess = db_session.create_session()
-    managers = db_sess.query(User).filter(User.id in bus.manager_list['id']).all()
-    return jsonify(
-        {
-            'managers':
-                [item.to_dict(only=('name'))
-                 for item in managers]
-        }
-    )
+    if bus.worker_list:
+        workers = db_sess.query(Worker).filter(Worker.id.in_(json.loads(bus.worker_list)['id'])).all()
+        return jsonify(
+            {
+                'workers':
+                    [item.to_dict(only=('name', 'surname', 'salary', 'position'))
+                     for item in workers]
+            }
+        )
+    return make_response(jsonify({'error': 'There is not any worker'}), 404)
 
 
-@blueprint.route('/api/business/get_manager/<id>', methods=['GET'])
-def get_manager(id):
-    db_sess = db_session.create_session()
-    manag = db_sess.query(User).filter(User.id == id).first()
-    if not manag:
-        return make_response(jsonify({'error': 'Manager not found'}), 404)
-    return jsonify(
-        {
-            'manager':
-                manag.to_dict(only=('name'))
-        }
-    )
-
-
+@blueprint.route('/api/business/<biz_id>/get_worker/<id>', methods=['GET'])
 @api_key_check_business
-@blueprint.route('/api/business/get_workers/<id>', methods=['GET'])
-def get_workers(id):
-    db_sess = db_session.create_session()
-    bus = db_sess.query(Business).filter(Business.id == id).first()
-    if not bus:
-        return make_response(jsonify({'error': 'Business not found'}), 404)
-    db_sess = db_session.create_session()
-    workers = db_sess.query(Worker).filter(Worker.id in bus.worker_list['id']).all()
-    return jsonify(
-        {
-            'workers':
-                [item.to_dict(only=('name', 'surname', 'salary', 'position'))
-                 for item in workers]
-        }
-    )
-
-@api_key_check_business
-@blueprint.route('/api/business/get_worker/<id>', methods=['GET'])
-def get_worker(id):
+def get_worker(biz_id, id):
+    id = int(id)
     db_sess = db_session.create_session()
     worker = db_sess.query(Worker).filter(Worker.id == id).first()
     if not worker:
@@ -272,9 +263,11 @@ def get_worker(id):
         }
     )
 
+
+@blueprint.route('/api/business/<biz_id>/create_worker', methods=['POST'])
 @api_key_check_business
-@blueprint.route('/api/business/create_worker', methods=['POST'])
-def create_worker():
+def create_worker(biz_id):
+    biz_id = int(biz_id)
     if not request.json:
         return make_response(jsonify({'error': 'Empty request'}), 400)
     elif not all(key in request.json for key in ['surname', 'name', 'position',
@@ -289,23 +282,19 @@ def create_worker():
     )
     db_sess.add(worker)
     db_sess.commit()
-    return jsonify({'id': worker.id})
 
-@api_key_check_business
-@blueprint.route('/api/business/create_product', methods=['POST'])
-def create_product():
-    if not request.json:
-        return make_response(jsonify({'error': 'Empty request'}), 400)
-    elif not all(key in request.json for key in ['status', 'name', 'price',
-                                                 'image']):
-        return make_response(jsonify({'error': 'Bad request'}, 400))
-    db_sess = db_session.create_session()
-    product = Product(
-        status=request.json['status'],
-        name=request.json['name'],
-        price=request.json['price'],
-        image=request.json['image']
-    )
-    db_sess.add(product)
+    biz = db_sess.query(Business).filter(Business.id == biz_id).first()
+    if biz.worker_list:
+        wo_l = json.loads(biz.worker_list)
+        wo_l['id'].append(worker.id)
+    else:
+        wo_l = dict()
+        wo_l['id'] = [worker.id]
+
+    biz.worker_list = json.dumps(wo_l)
+
+    stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
+    stat.worker_count += 1
     db_sess.commit()
-    return jsonify({'id': product.id})
+
+    return jsonify({'id': worker.id})
