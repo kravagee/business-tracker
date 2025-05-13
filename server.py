@@ -180,7 +180,7 @@ def business(id):
     if biz.manager_list:
         mans = json.loads(biz.manager_list)
 
-    managers = db_sess.query(User).filter(User.id in mans['id']).all()
+    managers = db_sess.query(User).filter(User.id.in_(mans['id'])).all()
     stats = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == id).first()
 
     return render_template('business.html',
@@ -416,7 +416,6 @@ def business_manager_list(biz_id):
     man_list = {'id': []}
     if biz.manager_list:
         man_list = json.loads(biz.manager_list)
-    print(man_list)
     managers = db_sess.query(User).filter(User.id.in_(man_list['id'])).all()
     if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return render_template('business_managers.html', user=current_user, managers=managers, bizz_id=biz_id,
@@ -437,6 +436,8 @@ def business_add_manager(biz_id):
     if request.method == 'GET':
         return render_template('add_manager.html', user=current_user, access=True)
     manag = db_sess.query(User).filter(User.username == request.form['manag_username']).first()
+    if not manag:
+        return render_template('add_manager.html', user=current_user, access=True)
     if manag.id not in man_list['id']:
         man_list['id'].append(manag.id)
     biz.manager_list = json.dumps(man_list)
@@ -456,6 +457,7 @@ def business_add_manager(biz_id):
 @app.route('/business/<biz_id>/remove_manager/<id>', methods=['POST', 'GET'])
 @login_required
 def business_remove_manager(biz_id, id):
+    biz_id, id = int(biz_id), int(id)
     db_sess = db_session.create_session()
     biz = db_sess.query(Business).filter(Business.id == biz_id).first()
     man_list = {'id': []}
@@ -463,11 +465,11 @@ def business_remove_manager(biz_id, id):
         man_list = json.loads(biz.manager_list)
     if biz.owner_id != current_user.id and current_user.id not in man_list['id'] or not biz:
         return make_response(jsonify({'error': 'Access denied'}), 403)
-    if id in man_list['id']:
-        man_list['id'].remove(id)
+    man_list['id'].remove(id)
     us = db_sess.query(User).filter(User.id == id).first()
     mans_l = json.loads(us.business_manager_list)
-    mans_l.remove(id)
+    mans_l['id'].remove(biz_id)
+    biz.manager_list = json.dumps(mans_l)
     us.business_manager_list = json.dumps(mans_l)
     db_sess.commit()
     db_sess.close()
