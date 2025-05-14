@@ -14,27 +14,27 @@
 
             <div class="form-group">
                 <label for="price">Цена:</label>
-                <input type="number" step="0.01" id="price" name="price" value="{{ purchase.price }}" required>
+                <input type="number" step="0.01" min="0" id="price" name="price" value="{{ purchase.price }}" required>
             </div>
 
             <div class="form-group">
                 <label for="status">Статус:</label>
-                <select id="status" name="status">
-                    {% if purchase.status == 'active' %}
-                    <option value="active">Активный</option>
+                <select id="status" name="status" required="required">
+                    {% if purchase.status == 'На складе' %}
+                    <option value="На складе">На складе</option>
                     {% endif %}
-                    {% if purchase.status == 'inactive' %}
-                    <option value="inactive">Неактивный</option>
+                    {% if purchase.status == 'Использован' %}
+                    <option value="Использован">Использован</option>
                     {% endif %}
                     {% if purchase.status == 'pending' %}
-                    <option value="pending">Ожидание</option>
+                    <option value="Доставляется">Доставляется</option>
                     {% endif %}
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="image">Изображение:</label>
-                <input type="file" id="image" name="image" accept="image/*">
+                <input type="file" id="image" name="image" accept="image/*" required="required">
                 {% if purchase.image %}
                     <div>
                         <p>Текущее изображение:</p>

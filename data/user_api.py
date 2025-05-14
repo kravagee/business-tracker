@@ -25,6 +25,7 @@ def api_key_check_user(func):
             return make_response(jsonify({'error': 'Miss api key'}), 400)
         db_sess = db_session.create_session()
         api_key = db_sess.query(User).filter(User.id == kwargs['id']).first().api_key
+        db_sess.close()
         if api_key != us_ap_k:
             return make_response(jsonify({'error': 'Invalid api key'}), 403)
         return func(*args, **kwargs)
@@ -37,6 +38,7 @@ def api_key_check_user(func):
 def get_user_stats(id):
     db_sess = db_session.create_session()
     stats = db_sess.query(StatsUsers).filter(StatsUsers.id == id).first()
+    db_sess.close()
     if not stats:
         return make_response(jsonify({'error': 'User not found'}))
     return jsonify(
@@ -97,9 +99,10 @@ def get_businesses(id):
     if us.business_owner_list:
         own_l = json.loads(us.business_owner_list)
     if not own_l:
+        db_sess.close()
         return make_response(jsonify({'error': 'User not found or User have zero businesses'}), 400)
-    print(own_l)
     businesses = db_sess.query(Business).filter(Business.id.in_(own_l['id'])).all()
+    db_sess.close()
     return jsonify(
         {
             'businesses':

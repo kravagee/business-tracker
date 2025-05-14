@@ -26,11 +26,17 @@ def api_key_check_business(func):
             return make_response(jsonify({'error': 'Miss api key'}), 400)
         db_sess = db_session.create_session()
         us = db_sess.query(Business).filter(Business.id == kwargs['biz_id']).first()
-        api_key = db_sess.query(User).filter(User.id == us.owner_id).first().api_key
-        if api_key != us_ap_k:
-            return make_response(jsonify({'error': 'Invalid api key'}), 403)
-        return func(*args, **kwargs)
+        if us.manager_list:
+            m_l = json.loads(us.manager_list)
+        else:
+            m_l = {'id': []}
 
+        api_key = db_sess.query(User).filter(User.id == us.owner_id or User.id.in_(us.manager_list['id'])).all()
+        db_sess.close()
+        for i in api_key:
+            if i.api_key == us_ap_k:
+                return func(*args, **kwargs)
+        return make_response(jsonify({'error': 'Invalid api key'}), 403)
     return wrapper
 
 
@@ -39,6 +45,7 @@ def api_key_check_business(func):
 def get_business_stats(biz_id):
     db_sess = db_session.create_session()
     stats = db_sess.query(StatsBusiness).filter(StatsBusiness.id == biz_id).first()
+    db_sess.close()
     if not stats:
         return make_response(jsonify({'error': 'User not found'}))
     return jsonify(
@@ -56,17 +63,18 @@ def add_manager(biz_id, id):
     bus = db_sess.query(Business).filter(Business.id == int(biz_id)).first()
     id = int(id)
     if not bus:
+        db_sess.close()
         return make_response(jsonify({'error': 'Business not found'}), 404)
     if not bus.manager_list:
         man_list = {'id': [id]}
         bus.manager_list = json.dumps(man_list)
     else:
         man_list = json.loads(bus.manager_list)
-        print(man_list, id)
         if not id in man_list['id']:
             man_list['id'].append(id)
             bus.manager_list = json.dumps(man_list)
         else:
+            db_sess.close()
             return make_response(jsonify({'error': 'Manager already added'}), 400)
 
     man = db_sess.query(User).filter(User.id == id).first()
@@ -90,10 +98,11 @@ def delete_manager(biz_id, id):
     biz_id, id = int(biz_id), int(id)
     bus = db_sess.query(Business).filter(Business.id == biz_id).first()
     if not bus:
+        db_sess.close()
         return make_response(jsonify({'error': 'Business not found'}), 404)
     if not bus.manager_list or len(json.loads(bus.manager_list)['id']) == 0:
+        db_sess.close()
         return make_response(jsonify({'error': 'No managers linked to this business'}), 400)
-    print(id, json.loads(bus.manager_list)['id'])
     if id in json.loads(bus.manager_list)['id']:
         man_l = json.loads(bus.manager_list)
         man_l['id'].remove(id)
@@ -139,14 +148,17 @@ def delete_worker(biz_id, id):
     db_sess = db_session.create_session()
     bus = db_sess.query(Business).filter(Business.id == id).first()
     if not bus:
+        db_sess.close()
         return make_response(jsonify({'error': 'Business not found'}), 404)
     if not bus.worker_list or len(json.loads(bus.worker_list)['id']) == 0:
+        db_sess.close()
         return make_response(jsonify({'error': 'No workers linked to this business'}), 400)
     if id in json.loads(bus.worker_list)['id']:
         wo_l = json.loads(bus.worker_list)
         wo_l['id'].remove(id)
         bus.worker_list = json.dumps(wo_l)
     else:
+        db_sess.close()
         return make_response(jsonify({'error': 'This worker does not linked to this business'}), 400)
 
     stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
@@ -172,9 +184,11 @@ def edit_product(biz_id, id):
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
     if not product:
+        db_sess.close()
         return make_response(jsonify({'error': 'Product not found'}, 404))
     if 'status' in request.json.keys():
         if request.json['status'] not in ['На складе', 'Использован', 'Доставляется']:
+            db_sess.close()
             return make_response(jsonify({'error': 'Bad status'}), 400)
     product.status = request.json['status'] if 'status' in request.json.keys() else product.status
     product.name = request.json['name'] if 'name' in request.json.keys() else product.name
@@ -197,10 +211,12 @@ def get_products(biz_id):
     db_sess = db_session.create_session()
     bus = db_sess.query(Business).filter(Business.id == biz_id).first()
     if not bus:
+        db_sess.close()
         return make_response(jsonify({'error': 'Business not found'}), 404)
     db_sess = db_session.create_session()
     if bus.product_list:
         products = db_sess.query(Product).filter(Product.id.in_(json.loads(bus.product_list)['id'])).all()
+        db_sess.close()
         return jsonify(
             {
                 'products':
@@ -208,6 +224,7 @@ def get_products(biz_id):
                      for item in products]
             }
         )
+    db_sess.close()
     return make_response(jsonify({'error': 'There is not any product'}), 404)
 
 
@@ -218,7 +235,9 @@ def get_product(biz_id, id):
     db_sess = db_session.create_session()
     product = db_sess.query(Product).filter(Product.id == id).first()
     if not product:
+        db_sess.close()
         return make_response(jsonify({'error': 'Product not found'}), 404)
+    db_sess.close()
     return jsonify(
         {
             'product':
@@ -234,10 +253,11 @@ def get_workers(biz_id):
     db_sess = db_session.create_session()
     bus = db_sess.query(Business).filter(Business.id == biz_id).first()
     if not bus:
+        db_sess.close()
         return make_response(jsonify({'error': 'Business not found'}), 404)
-    db_sess = db_session.create_session()
     if bus.worker_list:
         workers = db_sess.query(Worker).filter(Worker.id.in_(json.loads(bus.worker_list)['id'])).all()
+        db_sess.close()
         return jsonify(
             {
                 'workers':
@@ -245,6 +265,7 @@ def get_workers(biz_id):
                      for item in workers]
             }
         )
+    db_sess.close()
     return make_response(jsonify({'error': 'There is not any worker'}), 404)
 
 
@@ -255,7 +276,9 @@ def get_worker(biz_id, id):
     db_sess = db_session.create_session()
     worker = db_sess.query(Worker).filter(Worker.id == id).first()
     if not worker:
+        db_sess.close()
         return make_response(jsonify({'error': 'Worker not found'}), 404)
+    db_sess.close()
     return jsonify(
         {
             'worker':
@@ -296,5 +319,6 @@ def create_worker(biz_id):
     stat = db_sess.query(StatsBusiness).filter(StatsBusiness.business_id == biz_id).first()
     stat.worker_count += 1
     db_sess.commit()
+    db_sess.close()
 
     return jsonify({'id': worker.id})
