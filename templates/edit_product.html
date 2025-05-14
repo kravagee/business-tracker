@@ -20,15 +20,9 @@
             <div class="form-group">
                 <label for="status">Статус:</label>
                 <select id="status" name="status" required="required">
-                    {% if purchase.status == 'На складе' %}
                     <option value="На складе">На складе</option>
-                    {% endif %}
-                    {% if purchase.status == 'Использован' %}
                     <option value="Использован">Использован</option>
-                    {% endif %}
-                    {% if purchase.status == 'pending' %}
                     <option value="Доставляется">Доставляется</option>
-                    {% endif %}
                 </select>
             </div>
 

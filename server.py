@@ -278,7 +278,7 @@ def edit_product(biz_id, id):
     product.image = img_path
     product.price = request.form['price']
     db_sess.commit()
-    db_sess.close()
+    # возник некоторый баг, здесь нельзя закрывать сессию, иначе при редактировании товара будет ошибка Iternal Server Error
     return render_template('edit_product.html', user=current_user, bizz_id=biz_id, purchase=product, access=True)
 
 
