@@ -1,2 +1,2 @@
 Запускать server.py
-Адресс в поисковой строке: https://energetic-emphasized-lighter.glitch.me/
+Адресс в поисковой строке: https://capricious-phrygian-punch.glitch.me/
